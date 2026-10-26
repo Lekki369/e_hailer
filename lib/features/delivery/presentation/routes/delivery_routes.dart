@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../screens/active_delivery_screen.dart';
 import '../screens/consignment_creation_screen.dart';
 import '../screens/customer_home_screen.dart';
 import '../screens/driver_dashboard_screen.dart';
@@ -27,6 +28,25 @@ abstract class DriverDashboardRoute {
         path: path,
         name: name,
         builder: (context, state) => const DriverDashboardScreen(),
+      );
+}
+
+/// Screen-level route definition for Active Delivery Terminal
+abstract class ActiveDeliveryRoute {
+  static const String path = '/driver/active-delivery/:orderId';
+  static const String name = 'active-delivery';
+
+  /// Helper to build parameterized path
+  static String pathWithId(String orderId) =>
+      '/driver/active-delivery/$orderId';
+
+  static GoRoute get route => GoRoute(
+        path: path,
+        name: name,
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId'] ?? '';
+          return ActiveDeliveryScreen(orderId: orderId);
+        },
       );
 }
 
@@ -81,6 +101,12 @@ abstract class DeliveryRoutes {
   static const String driverDashboardPath = DriverDashboardRoute.path;
   static const String driverDashboardName = DriverDashboardRoute.name;
 
+  static const String activeDeliveryPath = ActiveDeliveryRoute.path;
+  static const String activeDeliveryName = ActiveDeliveryRoute.name;
+
+  static String activeDelivery(String orderId) =>
+      ActiveDeliveryRoute.pathWithId(orderId);
+
   static const String expressBookingPath = ExpressBookingRoute.path;
   static const String expressBookingName = ExpressBookingRoute.name;
 
@@ -96,6 +122,7 @@ abstract class DeliveryRoutes {
   // Screen GoRoutes
   static GoRoute get customerHomeRoute => CustomerHomeRoute.route;
   static GoRoute get driverDashboardRoute => DriverDashboardRoute.route;
+  static GoRoute get activeDeliveryRoute => ActiveDeliveryRoute.route;
   static GoRoute get expressBookingRoute => ExpressBookingRoute.route;
   static GoRoute get consignmentCreationRoute => ConsignmentCreationRoute.route;
   static GoRoute get orderTrackingRoute => OrderTrackingRoute.route;
@@ -104,6 +131,7 @@ abstract class DeliveryRoutes {
   static List<GoRoute> get routes => [
         CustomerHomeRoute.route,
         DriverDashboardRoute.route,
+        ActiveDeliveryRoute.route,
         ExpressBookingRoute.route,
         ConsignmentCreationRoute.route,
         OrderTrackingRoute.route,

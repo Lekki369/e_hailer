@@ -68,6 +68,19 @@ class AuthRemoteService {
     }
   }
 
+  /// Toggle driver online/availability status
+  Future<Either<AppFailure, Unit>> setDriverAvailability({
+    required String uid,
+    required bool isAvailable,
+  }) async {
+    try {
+      await _usersRef.doc(uid).update({'isAvailable': isAvailable});
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to update availability: $e'));
+    }
+  }
+
   /// Sign out
   Future<void> signOut() async {
     await _firebaseAuth.signOut();

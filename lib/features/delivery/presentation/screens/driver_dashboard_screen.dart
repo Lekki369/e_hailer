@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
+import '../routes/delivery_routes.dart';
 
 class DriverDashboardScreen extends ConsumerWidget {
   const DriverDashboardScreen({super.key});
@@ -12,6 +15,9 @@ class DriverDashboardScreen extends ConsumerWidget {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
     final driver = userProfileAsync.value;
     final availableOrdersAsync = ref.watch(availableOrdersStreamProvider);
+    final activeOrdersAsync = driver != null
+        ? ref.watch(driverActiveOrdersStreamProvider(driver.uid))
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -28,7 +34,7 @@ class DriverDashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Driver Status & Availability Header
+            // 1. Driver Profile & Availability Toggle Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -36,63 +42,224 @@ class DriverDashboardScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.divider),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    child: const Icon(
-                      Icons.two_wheeler_rounded,
-                      size: 30,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          driver?.fullName ?? 'Driver',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor:
+                            AppColors.primary.withValues(alpha: 0.1),
+                        child: const Icon(
+                          Icons.two_wheeler_rounded,
+                          size: 30,
+                          color: AppColors.primary,
                         ),
-                        const SizedBox(height: 4),
-                        Row(
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.star_rounded,
-                              size: 16,
-                              color: Colors.amber.shade700,
-                            ),
-                            const SizedBox(width: 4),
                             Text(
-                              '${driver?.rating ?? 5.0} • ${driver?.vehicleType?.label ?? 'Motorcycle'}',
+                              driver?.fullName ?? 'Fleet Driver',
                               style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star_rounded,
+                                  size: 16,
+                                  color: Colors.amber.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${driver?.rating ?? 5.0} • ${driver?.vehicleType?.label ?? 'Motorcycle'}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Column(
+                        children: [
+                          Switch(
+                            value: driver?.isAvailable ?? false,
+                            activeThumbColor: AppColors.success,
+                            onChanged: (val) async {
+                              if (driver == null) return;
+                              final res = await ref
+                                  .read(authRemoteServiceProvider)
+                                  .setDriverAvailability(
+                                    uid: driver.uid,
+                                    isAvailable: val,
+                                  );
+                              res.fold(
+                                (failure) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(failure.message)),
+                                  );
+                                },
+                                (_) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: val
+                                          ? AppColors.success
+                                          : AppColors.textMuted,
+                                      content: Text(
+                                        val
+                                            ? 'You are now ONLINE and broadcasting availability'
+                                            : 'You are now OFFLINE',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          Text(
+                            (driver?.isAvailable ?? false) ? 'ONLINE' : 'OFFLINE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: (driver?.isAvailable ?? false)
+                                  ? AppColors.success
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Switch(
-                    value: driver?.isAvailable ?? false,
-                    activeThumbColor: AppColors.success,
-                    onChanged: (val) {
-                      // Toggle availability status in Firestore
-                    },
+                  const Divider(height: 24),
+
+                  // Digital Wallet Quick Balance
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet_rounded,
+                              size: 18, color: AppColors.secondary),
+                          SizedBox(width: 8),
+                          Text(
+                            'Digital Wallet Earnings',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '₦${(driver?.walletBalance ?? 0.0).toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Incoming Broadcast Requests (from MyOGA & Deliverzler)
+            // 2. Active Ongoing Orders Section (If assigned to this driver)
+            if (activeOrdersAsync != null)
+              activeOrdersAsync.when(
+                data: (activeOrders) {
+                  if (activeOrders.isEmpty) return const SizedBox.shrink();
+                  final active = activeOrders.first;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.secondary),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.delivery_dining_rounded,
+                                      color: AppColors.secondary),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Active Trip in Progress',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: AppColors.secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  active.status.name.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            active.dropoffLocation.address,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.navigation_rounded),
+                            label: const Text('Open Active Delivery Terminal'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.secondary,
+                            ),
+                            onPressed: () {
+                              context.push(
+                                  ActiveDeliveryRoute.pathWithId(active.id));
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
+            // 3. Incoming Broadcast Requests (from MyOGA & Deliverzler)
             Text(
               'Incoming Delivery Requests',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -201,9 +368,9 @@ class DriverDashboardScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (driver == null) return;
-                                ref
+                                final result = await ref
                                     .read(deliveryRemoteServiceProvider)
                                     .acceptJob(
                                       orderId: order.id,
@@ -215,6 +382,19 @@ class DriverDashboardScreen extends ConsumerWidget {
                                       driverLongitude:
                                           order.pickupLocation.longitude,
                                     );
+
+                                result.fold(
+                                  (failure) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(failure.message)),
+                                    );
+                                  },
+                                  (_) {
+                                    context.push(
+                                      ActiveDeliveryRoute.pathWithId(order.id),
+                                    );
+                                  },
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.secondary,

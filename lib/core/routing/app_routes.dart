@@ -24,6 +24,11 @@ abstract class AppRoutes {
   static const String driverDashboardName = DeliveryRoutes.driverDashboardName;
   static const String driverDashboardPath = DeliveryRoutes.driverDashboardPath;
 
+  static const String activeDeliveryName = DeliveryRoutes.activeDeliveryName;
+  static const String activeDeliveryPath = DeliveryRoutes.activeDeliveryPath;
+  static String activeDelivery(String orderId) =>
+      DeliveryRoutes.activeDelivery(orderId);
+
   // Order Booking & Dispatch
   static const String expressBookingName = DeliveryRoutes.expressBookingName;
   static const String expressBookingPath = DeliveryRoutes.expressBookingPath;

@@ -44,6 +44,12 @@ final class OrderNotFoundFailure extends AppFailure {
   }) : super(message);
 }
 
+final class InvalidOtpFailure extends AppFailure {
+  const InvalidOtpFailure({
+    String message = 'Invalid 4-digit handover verification PIN.',
+  }) : super(message);
+}
+
 final class UnexpectedFailure extends AppFailure {
   const UnexpectedFailure({
     String message = 'An unexpected error occurred.',

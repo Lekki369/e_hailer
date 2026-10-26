@@ -30,3 +30,10 @@ final customerOrdersStreamProvider =
   final service = ref.watch(deliveryRemoteServiceProvider);
   return service.watchCustomerOrders(customerId);
 });
+
+/// Stream provider for driver's active ongoing orders
+final driverActiveOrdersStreamProvider =
+    StreamProvider.family<List<DeliveryOrder>, String>((ref, driverId) {
+  final service = ref.watch(deliveryRemoteServiceProvider);
+  return service.watchDriverActiveOrders(driverId);
+});

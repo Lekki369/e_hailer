@@ -117,4 +117,75 @@ class DeliveryRemoteService {
       return left(ServerFailure(message: 'Failed to accept order: $e'));
     }
   }
+
+  /// Stream active delivery orders assigned to a specific driver
+  Stream<List<DeliveryOrder>> watchDriverActiveOrders(String driverId) {
+    return _deliveriesRef
+        .where('driverId', isEqualTo: driverId)
+        .where('status', whereIn: [
+          DeliveryStatus.assigned.name,
+          DeliveryStatus.arrivedPickup.name,
+          DeliveryStatus.pickedUp.name,
+          DeliveryStatus.inTransit.name,
+          DeliveryStatus.arrivedDropoff.name,
+        ])
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => DeliveryOrder.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  /// Real-time live update of driver GPS coordinates
+  Future<Either<AppFailure, Unit>> updateDriverLocation({
+    required String orderId,
+    required double driverLatitude,
+    required double driverLongitude,
+  }) async {
+    try {
+      await _deliveriesRef.doc(orderId).update({
+        'driverLatitude': driverLatitude,
+        'driverLongitude': driverLongitude,
+      });
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to update GPS: $e'));
+    }
+  }
+
+  /// Verify 4-digit recipient security PIN and complete delivery handover
+  Future<Either<AppFailure, Unit>> verifyAndCompleteDelivery({
+    required String orderId,
+    required String driverId,
+    required String inputOtp,
+    required String expectedOtp,
+    required double driverEarnings,
+  }) async {
+    if (inputOtp.trim() != expectedOtp.trim()) {
+      return left(const InvalidOtpFailure(
+        message: 'Invalid 4-digit handover PIN. Please ask the recipient for the correct PIN.',
+      ));
+    }
+
+    try {
+      final batch = _firestore.batch();
+
+      // 1. Update order status to delivered
+      final orderRef = _deliveriesRef.doc(orderId);
+      batch.update(orderRef, {
+        'status': DeliveryStatus.delivered.name,
+        'deliveredAt': DateTime.now().toIso8601String(),
+      });
+
+      // 2. Credit driver digital wallet with 80% net earnings
+      final driverRef = _firestore.collection('users').doc(driverId);
+      batch.update(driverRef, {
+        'walletBalance': FieldValue.increment(driverEarnings),
+      });
+
+      await batch.commit();
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to verify and complete delivery: $e'));
+    }
+  }
 }
