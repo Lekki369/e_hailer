@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
 
@@ -117,7 +118,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                     subtitle: 'Direct bike dispatch with live GPS tracking',
                     badgeColor: AppColors.secondary,
                     onTap: () {
-                      context.push('/express-booking');
+                      context.push(AppRoutes.expressBookingPath);
                     },
                   ),
                 ),
@@ -129,7 +130,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                     subtitle: 'Volumetric boxes, freight & waybill tracking',
                     badgeColor: AppColors.info,
                     onTap: () {
-                      context.push('/consignment-creation');
+                      context.push(AppRoutes.consignmentCreationPath);
                     },
                   ),
                 ),
@@ -224,7 +225,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                                 color: AppColors.textSecondary,
                               ),
                               onTap: () {
-                                context.push('/tracking/${order.id}');
+                                context.push(AppRoutes.orderTracking(order.id));
                               },
                             ),
                           );

@@ -52,6 +52,10 @@ All AI agents and developers modifying this codebase MUST strictly adhere to the
 - Never throw unhandled exceptions in services.
 - Presentation logic handles results using `.fold((failure) => ..., (success) => ...)`.
 
+### Rule 5: Centralized Route & Asset Constants
+- **Zero Raw Route Literals**: Never hardcode route strings (e.g. `'/express-booking'`) in UI navigation or router configs. All paths, route names, and parameterized route builders MUST be defined in `lib/core/routing/app_routes.dart` (`AppRoutes`, `AuthRoutes`, `DeliveryRoutes`).
+- **Zero Raw Asset Paths**: Never write raw asset paths (`'assets/images/...'`). All image and icon asset constants MUST be registered in `lib/core/presentation/styles/app_assets.dart` (`AppAssets`, `AuthAssets`, `DeliveryAssets`, `MapAssets`).
+
 ---
 
 ## 3. Directory Layout & DDD Structure
@@ -65,9 +69,11 @@ lib/
 ├── core/                                            # Cross-cutting utilities & styles
 │   ├── domain/failures/app_failure.dart             # Sealed AppFailure hierarchy (Equatable)
 │   ├── presentation/
-│   │   ├── styles/                                  # AppColors & AppTheme (Material 3)
+│   │   ├── styles/                                  # AppColors, AppTheme, & AppAssets
 │   │   └── utils/fp_framework.dart                  # Re-exported fpdart constructs
-│   └── routing/app_router.dart                      # GoRouter with role & auth guards
+│   └── routing/                                     # Declarative routing & route registry
+│       ├── app_router.dart                          # GoRouter with role & auth guards
+│       └── app_routes.dart                          # Centralized feature route names & paths
 │
 └── features/                                        # Feature modules (DDD)
     ├── auth/                                        # User accounts & roles (Customer/Driver/Admin)

@@ -37,6 +37,7 @@ This file defines the project instructions, architectural boundaries, and guidel
 5. **State Management & Routing**:
    - State: Pure `hooks_riverpod: ^2.5.2` (`Provider`, `StreamProvider`, `StateNotifierProvider`).
    - Routing: `go_router: ^14.2.0` with role-based auth guards (`/home` for Customers, `/driver` for Fleet Drivers, `/login` for unauthenticated).
+   - Route & Asset Constants: Never use raw string literals. Use `AppRoutes` (`AuthRoutes`, `DeliveryRoutes`) and `AppAssets` (`AuthAssets`, `DeliveryAssets`, `MapAssets`).
 
 ---
 

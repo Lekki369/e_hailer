@@ -11,60 +11,61 @@ import '../../features/delivery/presentation/screens/customer_home_screen.dart';
 import '../../features/delivery/presentation/screens/driver_dashboard_screen.dart';
 import '../../features/delivery/presentation/screens/express_booking_screen.dart';
 import '../../features/delivery/presentation/screens/order_tracking_screen.dart';
+import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: AppRoutes.customerHomePath,
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authStateAsync.value != null;
-      final isLoggingIn = state.matchedLocation == '/login';
+      final isLoggingIn = state.matchedLocation == AppRoutes.loginPath;
 
       if (!isLoggedIn) {
-        return isLoggingIn ? null : '/login';
+        return isLoggingIn ? null : AppRoutes.loginPath;
       }
 
       if (isLoggingIn) {
         final userProfile = ref.read(currentUserProfileProvider).value;
         if (userProfile?.role == UserRole.driver) {
-          return '/driver';
+          return AppRoutes.driverDashboardPath;
         }
-        return '/home';
+        return AppRoutes.customerHomePath;
       }
 
       return null;
     },
     routes: [
       GoRoute(
-        path: '/login',
-        name: 'login',
+        path: AppRoutes.loginPath,
+        name: AppRoutes.loginName,
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        path: '/home',
-        name: 'home',
+        path: AppRoutes.customerHomePath,
+        name: AppRoutes.customerHomeName,
         builder: (context, state) => const CustomerHomeScreen(),
       ),
       GoRoute(
-        path: '/express-booking',
-        name: 'express-booking',
+        path: AppRoutes.expressBookingPath,
+        name: AppRoutes.expressBookingName,
         builder: (context, state) => const ExpressBookingScreen(),
       ),
       GoRoute(
-        path: '/consignment-creation',
-        name: 'consignment-creation',
+        path: AppRoutes.consignmentCreationPath,
+        name: AppRoutes.consignmentCreationName,
         builder: (context, state) => const ConsignmentCreationScreen(),
       ),
       GoRoute(
-        path: '/driver',
-        name: 'driver',
+        path: AppRoutes.driverDashboardPath,
+        name: AppRoutes.driverDashboardName,
         builder: (context, state) => const DriverDashboardScreen(),
       ),
       GoRoute(
-        path: '/tracking/:orderId',
-        name: 'tracking',
+        path: AppRoutes.orderTrackingPath,
+        name: AppRoutes.orderTrackingName,
         builder: (context, state) {
           final orderId = state.pathParameters['orderId'] ?? '';
           return OrderTrackingScreen(orderId: orderId);

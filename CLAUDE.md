@@ -34,6 +34,10 @@ This file provides system context, architectural guidelines, and build commands 
    - **Driving Routes & Distance**: Queried from the free **OSRM** API (`router.project-osrm.org`).
    - **Zero Cloud Storage**: Handover verified via 4-digit numeric PIN (`recipientSecurityOtp`).
 
+5. **Centralized Routing & Asset Registries**:
+   - Navigation: Use `AppRoutes` / `AuthRoutes` / `DeliveryRoutes` for route names, paths, and dynamic helpers.
+   - Assets: Use `AppAssets` / `AuthAssets` / `DeliveryAssets` / `MapAssets` for image and icon paths. Avoid hardcoded string literals.
+
 ---
 
 ## Key Domain Formulas

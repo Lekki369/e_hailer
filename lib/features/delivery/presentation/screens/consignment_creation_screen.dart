@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/entities/location_point.dart';
@@ -151,7 +152,7 @@ class ConsignmentCreationScreen extends HookConsumerWidget {
           );
         },
         (created) {
-          context.pushReplacement('/tracking/${created.id}');
+          context.pushReplacement(AppRoutes.orderTracking(created.id));
         },
       );
     }

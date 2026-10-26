@@ -116,14 +116,34 @@ final walletBalanceStreamProvider = StreamProvider.family<double, String>((ref, 
 });
 ```
 
-### Step 4: Register Route in `GoRouter` ([`lib/core/routing/app_router.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_router.dart))
-Add a new `GoRoute` with path and builder:
+### Step 4: Register Route in `AppRoutes` & `GoRouter`
+1. Define the route name and path in [`lib/core/routing/app_routes.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_routes.dart):
+```dart
+abstract class WalletRoutes {
+  static const String walletName = 'wallet';
+  static const String walletPath = '/wallet';
+}
+```
+2. Add the `GoRoute` in [`lib/core/routing/app_router.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_router.dart):
 ```dart
 GoRoute(
-  path: '/wallet',
-  name: 'wallet',
+  path: WalletRoutes.walletPath,
+  name: WalletRoutes.walletName,
   builder: (context, state) => const WalletScreen(),
 ),
+```
+3. Navigate type-safely in UI:
+```dart
+context.push(WalletRoutes.walletPath);
+```
+
+### Step 5: Register Asset Paths in `AppAssets`
+If the feature introduces new graphics, icons, or vehicle assets, register them in [`lib/core/presentation/styles/app_assets.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/presentation/styles/app_assets.dart):
+```dart
+abstract class WalletAssets {
+  static const String cardChip = 'assets/icons/card_chip.svg';
+  static const String topUpSuccess = 'assets/images/top_up_success.png';
+}
 ```
 
 ---

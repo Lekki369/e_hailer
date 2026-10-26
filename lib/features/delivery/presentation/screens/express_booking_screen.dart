@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/domain/route_result.dart';
 import '../../../map/infrastructure/osm_routing_service.dart';
@@ -144,7 +145,7 @@ class ExpressBookingScreen extends HookConsumerWidget {
           );
         },
         (created) {
-          context.pushReplacement('/tracking/${created.id}');
+          context.pushReplacement(AppRoutes.orderTracking(created.id));
         },
       );
     }
