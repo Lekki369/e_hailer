@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
@@ -6,13 +7,41 @@ import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
 
-class CustomerHomeScreen extends ConsumerWidget {
+class CustomerHomeScreen extends HookConsumerWidget {
   const CustomerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
     final user = userProfileAsync.value;
+    final searchController = useTextEditingController();
+    final isSearching = useState(false);
+
+    Future<void> handleTrackSearch() async {
+      final code = searchController.text.trim();
+      if (code.isEmpty) return;
+
+      isSearching.value = true;
+      final result = await ref
+          .read(deliveryRemoteServiceProvider)
+          .findOrderByTrackingNumber(code);
+      isSearching.value = false;
+
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.error,
+              content: Text(failure.message),
+            ),
+          );
+        },
+        (foundOrder) {
+          searchController.clear();
+          context.push(OrderTrackingRoute.pathWithId(foundOrder.id));
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -102,6 +131,52 @@ class CustomerHomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Waybill Consignment Search Bar (from courierManagementSystem)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.divider),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: searchController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'Track Any Parcel (e.g. EH-..., WAYBILL-...)',
+                  hintStyle: const TextStyle(
+                      fontSize: 13, color: AppColors.textMuted),
+                  prefixIcon: const Icon(Icons.qr_code_scanner_rounded,
+                      color: AppColors.primary),
+                  suffixIcon: isSearching.value
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.arrow_forward_rounded,
+                              color: AppColors.secondary),
+                          onPressed: handleTrackSearch,
+                        ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+                onSubmitted: (_) => handleTrackSearch(),
               ),
             ),
             const SizedBox(height: 24),

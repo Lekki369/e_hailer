@@ -9,6 +9,7 @@ import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/domain/route_result.dart';
 import '../../../map/infrastructure/osm_routing_service.dart';
+import '../../../map/presentation/providers/map_providers.dart';
 import '../../../map/presentation/widgets/osm_map_widget.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/value_objects/delivery_status.dart';
@@ -29,6 +30,15 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
     final isUpdatingStatus = useState(false);
     final routingService = useMemoized(() => OsmRoutingService());
     final routeResult = useState<RouteResult?>(null);
+    final broadcastService = ref.watch(driverLocationBroadcastServiceProvider);
+    final isLiveBroadcasting = useState(false);
+    final isSyncingGps = useState(false);
+
+    useEffect(() {
+      return () {
+        broadcastService.stopLiveBroadcast();
+      };
+    }, const []);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +94,127 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                     ),
                   ),
 
-                  // 2. Order Header & Trip Stage
+                  // 2. Live GPS Broadcast Toolbar
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.divider),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: isLiveBroadcasting.value
+                                    ? AppColors.success
+                                    : AppColors.textMuted,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isLiveBroadcasting.value
+                                  ? 'GPS Stream: ACTIVE'
+                                  : 'GPS Broadcast: OFF',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isLiveBroadcasting.value
+                                    ? AppColors.success
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              icon: isSyncingGps.value
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.my_location_rounded,
+                                      size: 15),
+                              label: const Text('Broadcast GPS',
+                                  style: TextStyle(fontSize: 11)),
+                              onPressed: isSyncingGps.value || isDelivered
+                                  ? null
+                                  : () async {
+                                      isSyncingGps.value = true;
+                                      final res = await broadcastService
+                                          .broadcastCurrentLocation(order.id);
+                                      isSyncingGps.value = false;
+                                      res.fold(
+                                        (f) => ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(f.message)),
+                                        ),
+                                        (pos) => ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            backgroundColor:
+                                                AppColors.success,
+                                            content: Text(
+                                                'GPS broadcasted (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})'),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                            ),
+                            Switch(
+                              value: isLiveBroadcasting.value,
+                              activeThumbColor: AppColors.success,
+                              onChanged: isDelivered
+                                  ? null
+                                  : (val) async {
+                                      if (val) {
+                                        final res = await broadcastService
+                                            .startLiveBroadcast(order.id);
+                                        res.fold(
+                                          (f) => ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(f.message)),
+                                          ),
+                                          (_) {
+                                            isLiveBroadcasting.value = true;
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                backgroundColor:
+                                                    AppColors.success,
+                                                content: Text(
+                                                    'Live GPS stream started! Position updates sync live.'),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      } else {
+                                        await broadcastService
+                                            .stopLiveBroadcast();
+                                        isLiveBroadcasting.value = false;
+                                      }
+                                    },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 3. Order Header & Trip Stage
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),

@@ -50,6 +50,34 @@ class DeliveryRemoteService {
             .toList());
   }
 
+  /// Find an order by Waybill or Consignment Tracking Number (from courierManagementSystem)
+  Future<Either<AppFailure, DeliveryOrder>> findOrderByTrackingNumber(
+      String trackingNumber) async {
+    final cleanCode = trackingNumber.trim().toUpperCase();
+    if (cleanCode.isEmpty) {
+      return left(const OrderNotFoundFailure(
+          message: 'Please enter a valid tracking code.'));
+    }
+
+    try {
+      final snapshot = await _deliveriesRef
+          .where('trackingNumber', isEqualTo: cleanCode)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return left(OrderNotFoundFailure(
+          message: 'No consignment found matching tracking code "$cleanCode".',
+        ));
+      }
+
+      final doc = snapshot.docs.first;
+      return right(DeliveryOrder.fromMap(doc.data(), doc.id));
+    } catch (e) {
+      return left(ServerFailure(message: 'Tracking lookup failed: $e'));
+    }
+  }
+
   /// Stream unassigned express orders within radius for nearby drivers (from MyOGA & Deliverzler)
   Stream<List<DeliveryOrder>> watchAvailableOrders() {
     return _deliveriesRef
