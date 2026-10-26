@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/domain/failures/app_failure.dart';
 import '../../../../core/presentation/utils/fp_framework.dart';
+import '../../delivery/domain/value_objects/delivery_type.dart';
 import '../domain/user_entity.dart';
 
 class AuthRemoteService {
@@ -78,6 +79,36 @@ class AuthRemoteService {
       return right(unit);
     } catch (e) {
       return left(ServerFailure(message: 'Failed to update availability: $e'));
+    }
+  }
+
+  /// Update user profile details and driver vehicle settings
+  Future<Either<AppFailure, Unit>> updateUserProfile({
+    required String uid,
+    String? fullName,
+    String? phone,
+    VehicleType? vehicleType,
+    String? vehiclePlateNumber,
+    String? vehicleModel,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{};
+      if (fullName != null) updateData['fullName'] = fullName.trim();
+      if (phone != null) updateData['phone'] = phone.trim();
+      if (vehicleType != null) updateData['vehicleType'] = vehicleType.name;
+      if (vehiclePlateNumber != null) {
+        updateData['vehiclePlateNumber'] = vehiclePlateNumber.trim();
+      }
+      if (vehicleModel != null) {
+        updateData['vehicleModel'] = vehicleModel.trim();
+      }
+
+      if (updateData.isNotEmpty) {
+        await _usersRef.doc(uid).update(updateData);
+      }
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to update profile: $e'));
     }
   }
 

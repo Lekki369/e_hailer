@@ -29,6 +29,11 @@ class DriverDashboardScreen extends ConsumerWidget {
             onPressed: () => context.push(WalletRoute.path),
           ),
           IconButton(
+            icon: const Icon(Icons.person_outline_rounded),
+            tooltip: 'Profile & Settings',
+            onPressed: () => context.push(ProfileRoute.path),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () => ref.read(authRemoteServiceProvider).signOut(),
           ),

@@ -19,6 +19,9 @@ abstract class AppRoutes {
   static const String loginName = AuthRoutes.loginName;
   static const String loginPath = AuthRoutes.loginPath;
 
+  static const String profileName = AuthRoutes.profileName;
+  static const String profilePath = AuthRoutes.profilePath;
+
   // Customer & Driver Dashboards
   static const String customerHomeName = DeliveryRoutes.customerHomeName;
   static const String customerHomePath = DeliveryRoutes.customerHomePath;
