@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../delivery/domain/value_objects/delivery_type.dart';
+import '../../domain/user_entity.dart';
 import '../providers/auth_providers.dart';
 
 class ProfileScreen extends HookConsumerWidget {
@@ -16,7 +17,8 @@ class ProfileScreen extends HookConsumerWidget {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
     final user = userProfileAsync.value;
 
-    final isDriver = user?.role.name == 'driver';
+    final isDriver = user?.role == UserRole.driver;
+    final isAdmin = user?.role == UserRole.admin;
 
     final nameController = useTextEditingController(text: user?.fullName ?? '');
     final phoneController = useTextEditingController(text: user?.phone ?? '');
@@ -67,11 +69,13 @@ class ProfileScreen extends HookConsumerWidget {
                           backgroundColor:
                               AppColors.primary.withValues(alpha: 0.1),
                           child: Icon(
-                            isDriver
-                                ? Icons.two_wheeler_rounded
-                                : Icons.person_rounded,
+                            isAdmin
+                                ? Icons.admin_panel_settings_rounded
+                                : isDriver
+                                    ? Icons.two_wheeler_rounded
+                                    : Icons.person_rounded,
                             size: 36,
-                            color: AppColors.primary,
+                            color: isAdmin ? Colors.purple : AppColors.primary,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -99,20 +103,29 @@ class ProfileScreen extends HookConsumerWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: isDriver
-                                      ? AppColors.secondary.withValues(alpha: 0.15)
-                                      : AppColors.primaryLight
-                                          .withValues(alpha: 0.1),
+                                  color: isAdmin
+                                      ? Colors.purple.shade50
+                                      : isDriver
+                                          ? AppColors.secondary
+                                              .withValues(alpha: 0.15)
+                                          : AppColors.primaryLight
+                                              .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  isDriver ? 'FLEET DRIVER' : 'CUSTOMER ACCOUNT',
+                                  isAdmin
+                                      ? 'OPERATIONS DISPATCHER'
+                                      : isDriver
+                                          ? 'FLEET DRIVER'
+                                          : 'CUSTOMER ACCOUNT',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: isDriver
-                                        ? AppColors.secondary
-                                        : AppColors.primary,
+                                    color: isAdmin
+                                        ? Colors.purple.shade800
+                                        : isDriver
+                                            ? AppColors.secondary
+                                            : AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -391,6 +404,96 @@ class ProfileScreen extends HookConsumerWidget {
                     ),
                     child: Column(
                       children: [
+                        // Operations Command Center (Admin or tester shortcut)
+                        ListTile(
+                          leading: const Icon(
+                            Icons.admin_panel_settings_rounded,
+                            color: Colors.purple,
+                          ),
+                          title: const Text('Operations Command Center'),
+                          subtitle: const Text(
+                              'Live Dispatch Queue, Map & Fleet Roster'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () =>
+                              context.push(AppRoutes.adminDashboardPath),
+                        ),
+                        const Divider(height: 1),
+
+                        // Role Switcher for Testing & Ecosystem Separation
+                        ListTile(
+                          leading: const Icon(
+                            Icons.swap_horiz_rounded,
+                            color: AppColors.primary,
+                          ),
+                          title: const Text('Switch Active Role Terminal'),
+                          subtitle: Text('Current: ${user.role.label}'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => SimpleDialog(
+                                title: const Text('Select Active Role'),
+                                children: UserRole.values.map((role) {
+                                  final isCurrent = user.role == role;
+                                  return SimpleDialogOption(
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      if (!isCurrent) {
+                                        await ref
+                                            .read(authRemoteServiceProvider)
+                                            .updateUserProfile(
+                                              uid: user.uid,
+                                              role: role,
+                                            );
+                                        if (context.mounted) {
+                                          if (role == UserRole.admin) {
+                                            context.go(
+                                                AppRoutes.adminDashboardPath);
+                                          } else if (role == UserRole.driver) {
+                                            context.go(
+                                                AppRoutes.driverDashboardPath);
+                                          } else {
+                                            context.go(
+                                                AppRoutes.customerHomePath);
+                                          }
+                                        }
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            role.label,
+                                            style: TextStyle(
+                                              fontWeight: isCurrent
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              color: isCurrent
+                                                  ? AppColors.primary
+                                                  : AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          if (isCurrent)
+                                            const Icon(
+                                              Icons.check,
+                                              color: AppColors.primary,
+                                              size: 18,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1),
+
                         ListTile(
                           leading: const Icon(
                             Icons.account_balance_wallet_rounded,

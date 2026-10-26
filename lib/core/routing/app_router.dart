@@ -23,10 +23,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (isLoggingIn) {
         final userProfile = ref.read(currentUserProfileProvider).value;
+        if (userProfile?.role == UserRole.admin) {
+          return AppRoutes.adminDashboardPath;
+        }
         if (userProfile?.role == UserRole.driver) {
           return AppRoutes.driverDashboardPath;
         }
         return AppRoutes.customerHomePath;
+      }
+
+      // Role-based protection for Admin routes
+      final isAdminRoute = state.matchedLocation.startsWith('/admin');
+      if (isAdminRoute) {
+        final userProfile = ref.read(currentUserProfileProvider).value;
+        if (userProfile != null && userProfile.role != UserRole.admin) {
+          return userProfile.role == UserRole.driver
+              ? AppRoutes.driverDashboardPath
+              : AppRoutes.customerHomePath;
+        }
       }
 
       return null;
@@ -35,6 +49,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ...AuthRoutes.routes,
       ...DeliveryRoutes.routes,
       ...WalletRoutes.routes,
+      ...AdminRoutes.routes,
     ],
   );
 });

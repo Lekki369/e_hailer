@@ -1,12 +1,12 @@
 # e-Hailer Platform Architecture & Template Guide
 
-A production-ready Flutter and Firebase architecture template combining **On-Demand Express Dispatch** and **Hub-and-Spoke Consignment Logistics**.
+A production-ready Flutter and Firebase architecture template combining **On-Demand Express Dispatch**, **Hub-and-Spoke Consignment Logistics**, and **Centralized Fleet Operations Command**.
 
 Built with:
 - **Architecture**: Domain-Driven Design (DDD) & Clean Layered Architecture
 - **State Management**: Pure `hooks_riverpod` (Compile-safe, reactive streams, **Zero `build_runner`**)
 - **Data Models**: Pure Dart 3 Immutable Entities with `package:equatable`
-- **Routing**: `go_router` with declarative role-based auth redirection
+- **Routing**: `go_router` with declarative role-based auth redirection (`Customer`, `Driver`, `Admin`)
 - **Functional Programming**: `fpdart` (`Either<AppFailure, T>`, `Unit`)
 - **Mapping & Navigation**: OpenStreetMap via `flutter_map` + OSRM (100% free, **Zero Google Maps Billing**)
 - **Backend**: Cloud Firestore + Firebase Authentication (**Zero Cloud Storage / Zero Paid GCS dependencies**)
@@ -21,23 +21,25 @@ flowchart TD
         direction TB
         CustomerScreens["Customer Views\n• CustomerHomeScreen\n• ExpressBookingScreen\n• ConsignmentCreationScreen\n• OrderTrackingScreen"]
         DriverScreens["Driver Views\n• DriverDashboardScreen\n• IncomingJobBroadcastCard\n• DeliveryHandoverModal"]
-        AuthScreens["Auth Views\n• LoginScreen\n• RoleGuard"]
+        AdminScreens["Admin Dispatch Views\n• AdminDashboardScreen\n• DispatchQueueScreen\n• DriverManagementScreen\n• AdminMapOverviewScreen\n• ManualAssignmentModal"]
+        AuthScreens["Auth Views\n• LoginScreen\n• RoleGuard\n• ProfileScreen & Terminal Switcher"]
         
-        RiverpodProviders["Riverpod Providers\n• authStateProvider\n• currentUserProfileProvider\n• activeOrderStreamProvider\n• availableOrdersStreamProvider\n• customerOrdersStreamProvider"]
+        RiverpodProviders["Riverpod Providers\n• authStateProvider\n• currentUserProfileProvider\n• activeOrderStreamProvider\n• availableOrdersStreamProvider\n• allOrdersStreamProvider\n• fleetDriversStreamProvider\n• dispatchMetricsStreamProvider"]
     end
 
     subgraph Domain["Domain Layer (Pure Dart 3 + Equatable)"]
         direction TB
-        Entities["Entities\n• DeliveryOrder\n• UserEntity\n• LocationPoint\n• ParcelDetails\n• PricingDetails\n• RouteResult"]
-        ValueObjects["Value Objects & Enums\n• DeliveryStatus\n• DeliveryType\n• VehicleType\n• PackageCategory"]
+        Entities["Entities\n• DeliveryOrder\n• UserEntity\n• FleetDriverSummary\n• DispatchMetrics\n• LocationPoint\n• ParcelDetails\n• PricingDetails\n• RouteResult"]
+        ValueObjects["Value Objects & Enums\n• UserRole\n• DeliveryStatus\n• DeliveryType\n• VehicleType\n• PackageCategory"]
         DomainServices["Domain Services\n• PricingCalculator (Volumetric & Distance)"]
-        Failures["Failures (Sealed Classes)\n• AppFailure (Server, Auth, Network, Location)"]
+        Failures["Failures (Sealed Classes)\n• AppFailure (Server, Auth, Network, Location, InvalidOtp)"]
     end
 
     subgraph Infrastructure["Infrastructure Layer (External Adapters)"]
         direction TB
         AuthService["AuthRemoteService\n(Firebase Auth + Firestore /users)"]
         DeliveryService["DeliveryRemoteService\n(Firestore /deliveries stream & actions)"]
+        AdminService["AdminRemoteService\n(Multi-stream aggregation & manual assignment)"]
         OsmService["OsmRoutingService\n(OSRM Route Polylines & Nominatim Geocoding)"]
     end
 
@@ -57,9 +59,11 @@ flowchart TD
     AuthService --> FirebaseAuth
     AuthService --> Firestore
     DeliveryService --> Firestore
+    AdminService --> Firestore
     OsmService --> OSRM
     CustomerScreens --> OSM
     DriverScreens --> OSM
+    AdminScreens --> OSM
 ```
 
 ---
@@ -82,6 +86,7 @@ feature_module/
 └── presentation/              # FLUTTER: Widgets, Hooks, and Riverpod State
     ├── providers/             # StreamProviders, StateProviders, Notifiers
     ├── screens/               # Complete pages rendered by GoRouter
+    ├── routes/                # Centralized feature route definitions
     └── widgets/               # Reusable modular UI components
 ```
 
@@ -107,6 +112,7 @@ stateDiagram-v2
     }
 
     SearchingDriver --> Assigned: Nearby driver taps 'Accept Job'
+    SearchingDriver --> Assigned: Dispatcher manually assigns via Admin Console
     HubQueued --> Assigned: Dispatcher assigns fleet driver
     
     Assigned --> ArrivedPickup: Driver reaches sender location
@@ -115,8 +121,9 @@ stateDiagram-v2
     InTransit --> ArrivedDropoff: Reached destination
     ArrivedDropoff --> Delivered: Recipient provides 4-digit PIN
     
-    SearchingDriver --> Cancelled: Timeout / Customer cancels
+    SearchingDriver --> Cancelled: Timeout / Customer cancels / Admin cancels
     Assigned --> Cancelled: Driver / Customer cancels with reason
+    Assigned --> Assigned: Dispatcher reassigns to new driver
     
     Delivered --> [*]
     Cancelled --> [*]
@@ -143,3 +150,35 @@ Eliminates reliance on paid Cloud Storage (GCS) for signatures or photo uploads:
 - Every order auto-generates a secure 4-digit OTP saved in the Firestore order document.
 - The recipient provides this code to the courier upon delivery.
 - The courier enters the PIN to confirm completion, instantly releasing payment and updating order status.
+
+---
+
+## 5. Operations Command Center & Fleet Dispatch Architecture
+
+The `admin` module elevates `e-Hailer` from a mobile app into a complete logistics business operations platform:
+
+### 1. Multi-Role Ecosystem Separation
+- **`UserRole.customer`**: Routes to `/home`. Access to on-demand hailing, consignment creation, and order tracking.
+- **`UserRole.driver`**: Routes to `/driver`. Access to online/offline broadcast terminal, incoming job requests, and PIN verification.
+- **`UserRole.admin`**: Routes to `/admin`. Access to Operations Command Center, Live Dispatch Queue, Fleet Roster, and Real-Time Operations Map.
+- **Terminal Switcher**: Built directly into `ProfileScreen` for seamless testing and operational role transitions.
+
+### 2. Live Dispatch Queue (`DispatchQueueScreen`)
+- Real-time Firestore stream of all orders across the entire platform.
+- Filterable by lifecycle status: `All`, `Pending`, `Assigned`, `In Transit`, `Delivered`, `Cancelled`.
+- Instant search filter supporting Waybill tracking numbers, customer names, phone numbers, and addresses.
+
+### 3. Manual Assignment & Reassignment Engine (`ManualAssignmentModal`)
+- One-tap assignment sheet that filters registered drivers by online status (`isAvailable == true`) and vehicle class.
+- Atomically updates Firestore `deliveries` and links `currentOrderId` to the driver's profile in a batch transaction.
+- Supports operational reassignment for delayed or unresponsive drivers with an audit note.
+
+### 4. Fleet Driver Management (`DriverManagementScreen`)
+- Full roster overview displaying driver name, phone, vehicle category (Motorcycle, Car, Van, Truck), plate number, and customer rating.
+- Live online/offline filter and search bar.
+
+### 5. Fleet Map Overview (`AdminMapOverviewScreen`)
+- Free OpenStreetMap interactive view rendering:
+  - Green markers for available online drivers with live GPS coordinates.
+  - Orange/Primary markers for pending order pickup locations.
+  - Interactive tap cards to inspect details and assign orders directly from the map.

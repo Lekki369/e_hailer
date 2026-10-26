@@ -18,4 +18,11 @@ enum VehicleType {
   final String label;
   final double rateMultiplier;
   const VehicleType(this.label, this.rateMultiplier);
+
+  static VehicleType fromString(String? value) {
+    return VehicleType.values.firstWhere(
+      (e) => e.name.toLowerCase() == (value ?? '').toLowerCase(),
+      orElse: () => VehicleType.bike,
+    );
+  }
 }

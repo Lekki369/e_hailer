@@ -82,3 +82,41 @@ $$\text{Total Fare} = \text{Base Fare} + \text{Distance Fare} + \text{Weight Sur
 ### Split Model:
 - **Driver Net Earnings**: $80\%$ of Total Fare.
 - **Platform Commission**: $20\%$ of Total Fare.
+
+---
+
+## 5. Operations Dispatch Command Center & Fleet Assignment Engine
+*Handled by the **`admin`** feature module (`lib/features/admin/`)*
+
+### Purpose
+Transforms e-Hailer from a client-driver hailing app into a comprehensive logistics operations platform with operational oversight, manual dispatch intervention, and fleet tracking.
+
+### Core Capabilities
+1. **Multi-Role Product Separation & Guards**:
+   - `UserRole.admin`: Directly redirected to `/admin` (`AdminDashboardScreen`).
+   - Non-admin attempts to access `/admin/*` routes are intercepted and redirected to their appropriate role home.
+   - Profile-level terminal switcher allows testing across Customer, Driver, and Admin roles instantly.
+
+2. **Real-Time Operational KPI Metrics**:
+   - Live counters for Pending Dispatch, In-Transit Packages, Delivered Today, Active Fleet Ratio, Total Revenue, and Total Billable Volume.
+   - Tapping any metric tile opens the filtered dispatch queue view.
+
+3. **Live Dispatch Queue (`DispatchQueueScreen`)**:
+   - Continuous Firestore synchronization of all orders sorted newest-first.
+   - Status filters: `All`, `Pending`, `Assigned`, `In Transit`, `Delivered`, `Cancelled`.
+   - Real-time instant search by Waybill number, customer name, phone number, or street address.
+
+4. **Manual Driver Assignment & Reassignment (`ManualAssignmentModal`)**:
+   - Hub operators can manually assign unassigned orders or reassign delayed/stalled deliveries.
+   - Filters registered drivers, highlighting those with `isAvailable == true` and matching vehicle class.
+   - Atomic Firestore batch updates the order status to `assigned` and sets `currentOrderId` on the driver's profile.
+
+5. **Fleet Roster Management (`DriverManagementScreen`)**:
+   - Comprehensive fleet directory with availability status, vehicle type badges, ratings, and active job status.
+   - Filter by Online / Offline and instant search by driver name, phone, or license plate.
+
+6. **Interactive Fleet Map Overview (`AdminMapOverviewScreen`)**:
+   - Zero-billing OpenStreetMap raster map displaying:
+     - Online driver locations (green vehicle markers).
+     - Active pickup points (orange parcel markers).
+   - Tapping any pin presents detailed operational metadata and direct assignment actions.

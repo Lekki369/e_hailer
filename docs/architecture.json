@@ -5,32 +5,35 @@
     "title": "e-Hailer Flutter Logistics & On-Demand Architecture",
     "output": "architecture.html",
     "quality_profile": "showcase",
-    "viewBox": [1280, 720]
+    "viewBox": [1280, 780]
   },
   "components": [
-    { "id": "customer_ui", "type": "frontend", "label": "Customer App", "sublabel": "Express & Parcel Booking", "pos": [60, 180], "size": [160, 74] },
-    { "id": "driver_ui", "type": "frontend", "label": "Driver Terminal", "sublabel": "Job Broadcast & Handover", "pos": [60, 360], "size": [160, 74] },
+    { "id": "customer_ui", "type": "frontend", "label": "Customer App", "sublabel": "Express & Parcel Booking", "pos": [60, 140], "size": [160, 74] },
+    { "id": "driver_ui", "type": "frontend", "label": "Driver Terminal", "sublabel": "Job Broadcast & Handover", "pos": [60, 320], "size": [160, 74] },
+    { "id": "admin_ui", "type": "frontend", "label": "Operations Console", "sublabel": "Dispatch & Fleet Control", "pos": [60, 500], "size": [160, 74] },
     
-    { "id": "riverpod_router", "type": "backend", "label": "Riverpod + GoRouter", "sublabel": "State Streams & Role Guards", "pos": [300, 270], "size": [170, 74] },
+    { "id": "riverpod_router", "type": "backend", "label": "Riverpod + GoRouter", "sublabel": "State Streams & Role Guards", "pos": [300, 320], "size": [170, 74] },
 
-    { "id": "domain_layer", "type": "backend", "label": "Domain Layer", "sublabel": "Equatable Entities & Calculator", "pos": [550, 150], "size": [180, 74] },
-    { "id": "infra_layer", "type": "backend", "label": "Infrastructure Services", "sublabel": "Firestore & OSM Services", "pos": [550, 390], "size": [180, 74] },
+    { "id": "domain_layer", "type": "backend", "label": "Domain Layer", "sublabel": "Equatable Entities & Calculator", "pos": [550, 180], "size": [180, 74] },
+    { "id": "infra_layer", "type": "backend", "label": "Infrastructure Services", "sublabel": "Firestore & OSM Services", "pos": [550, 440], "size": [180, 74] },
 
-    { "id": "firestore_db", "type": "database", "label": "Cloud Firestore", "sublabel": "/deliveries, /users", "brand": "firebase", "pos": [820, 290], "size": [160, 74] },
-    { "id": "firebase_auth", "type": "cloud", "label": "Firebase Auth", "sublabel": "Phone OTP & Email Claims", "brand": "firebase", "pos": [820, 470], "size": [160, 74] },
+    { "id": "firestore_db", "type": "database", "label": "Cloud Firestore", "sublabel": "/deliveries, /users", "brand": "firebase", "pos": [820, 320], "size": [160, 74] },
+    { "id": "firebase_auth", "type": "cloud", "label": "Firebase Auth", "sublabel": "Phone OTP & Email Claims", "brand": "firebase", "pos": [820, 500], "size": [160, 74] },
 
-    { "id": "osm_tiles", "type": "external", "label": "OpenStreetMap", "sublabel": "Free Raster Tiles", "pos": [1060, 120], "size": [160, 74] },
-    { "id": "osrm_router", "type": "external", "label": "OSRM Routing Engine", "sublabel": "Driving Road Polylines", "pos": [1060, 270], "size": [160, 74] }
+    { "id": "osm_tiles", "type": "external", "label": "OpenStreetMap", "sublabel": "Free Raster Tiles", "pos": [1060, 140], "size": [160, 74] },
+    { "id": "osrm_router", "type": "external", "label": "OSRM Routing Engine", "sublabel": "Driving Road Polylines", "pos": [1060, 320], "size": [160, 74] }
   ],
   "connections": [
     { "id": "c1", "from": "customer_ui", "to": "riverpod_router", "label": "user actions", "variant": "emphasis" },
     { "id": "c2", "from": "driver_ui", "to": "riverpod_router", "label": "accept job / status", "variant": "emphasis" },
-    { "id": "c3", "from": "riverpod_router", "to": "domain_layer", "label": "validates & computes" },
-    { "id": "c4", "from": "riverpod_router", "to": "infra_layer", "label": "watches streams" },
-    { "id": "c5", "from": "infra_layer", "to": "firestore_db", "label": "real-time updates", "variant": "emphasis" },
-    { "id": "c6", "from": "infra_layer", "to": "firebase_auth", "label": "auth state" },
-    { "id": "c7", "from": "customer_ui", "to": "osm_tiles", "label": "renders map", "variant": "dashed" },
-    { "id": "c8", "from": "infra_layer", "to": "osrm_router", "label": "driving directions & km", "variant": "emphasis" }
+    { "id": "c3", "from": "admin_ui", "to": "riverpod_router", "label": "manual assignment & queue", "variant": "emphasis" },
+    { "id": "c4", "from": "riverpod_router", "to": "domain_layer", "label": "validates & computes" },
+    { "id": "c5", "from": "riverpod_router", "to": "infra_layer", "label": "watches streams" },
+    { "id": "c6", "from": "infra_layer", "to": "firestore_db", "label": "real-time updates", "variant": "emphasis" },
+    { "id": "c7", "from": "infra_layer", "to": "firebase_auth", "label": "auth state" },
+    { "id": "c8", "from": "customer_ui", "to": "osm_tiles", "label": "renders map", "variant": "dashed" },
+    { "id": "c9", "from": "admin_ui", "to": "osm_tiles", "label": "fleet map overview", "variant": "dashed" },
+    { "id": "c10", "from": "infra_layer", "to": "osrm_router", "label": "driving directions & km", "variant": "emphasis" }
   ],
   "cards": [
     {
@@ -47,6 +50,14 @@
       "items": [
         "OpenStreetMap + OSRM completely eliminates Google Maps Platform API billing",
         "4-digit OTP handover PIN verifies delivery without paid Cloud Storage"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Operations & Dispatch Control",
+      "items": [
+        "Multi-role ecosystem: Customer, Fleet Driver, and Hub Dispatcher",
+        "Live order queue, manual assignment modal, and real-time fleet map overview"
       ]
     }
   ]

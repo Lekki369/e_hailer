@@ -87,6 +87,7 @@ class AuthRemoteService {
     required String uid,
     String? fullName,
     String? phone,
+    UserRole? role,
     VehicleType? vehicleType,
     String? vehiclePlateNumber,
     String? vehicleModel,
@@ -95,6 +96,7 @@ class AuthRemoteService {
       final updateData = <String, dynamic>{};
       if (fullName != null) updateData['fullName'] = fullName.trim();
       if (phone != null) updateData['phone'] = phone.trim();
+      if (role != null) updateData['role'] = role.name;
       if (vehicleType != null) updateData['vehicleType'] = vehicleType.name;
       if (vehiclePlateNumber != null) {
         updateData['vehiclePlateNumber'] = vehiclePlateNumber.trim();

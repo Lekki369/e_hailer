@@ -5,10 +5,12 @@
 /// [AppRoutes] provides universal shortcuts and paths for the router and navigation.
 library;
 
+import '../../features/admin/presentation/routes/admin_routes.dart';
 import '../../features/auth/presentation/routes/auth_routes.dart';
 import '../../features/delivery/presentation/routes/delivery_routes.dart';
 import '../../features/wallet/presentation/routes/wallet_routes.dart';
 
+export '../../features/admin/presentation/routes/admin_routes.dart';
 export '../../features/auth/presentation/routes/auth_routes.dart';
 export '../../features/delivery/presentation/routes/delivery_routes.dart';
 export '../../features/wallet/presentation/routes/wallet_routes.dart';
@@ -33,6 +35,19 @@ abstract class AppRoutes {
   static const String activeDeliveryPath = DeliveryRoutes.activeDeliveryPath;
   static String activeDelivery(String orderId) =>
       DeliveryRoutes.activeDelivery(orderId);
+
+  // Admin & Dispatcher Operations
+  static const String adminDashboardName = AdminRoutes.adminDashboardName;
+  static const String adminDashboardPath = AdminRoutes.adminDashboardPath;
+
+  static const String dispatchQueueName = AdminRoutes.dispatchQueueName;
+  static const String dispatchQueuePath = AdminRoutes.dispatchQueuePath;
+
+  static const String driverManagementName = AdminRoutes.driverManagementName;
+  static const String driverManagementPath = AdminRoutes.driverManagementPath;
+
+  static const String adminMapOverviewName = AdminRoutes.adminMapOverviewName;
+  static const String adminMapOverviewPath = AdminRoutes.adminMapOverviewPath;
 
   // Order Booking & Dispatch
   static const String expressBookingName = DeliveryRoutes.expressBookingName;
