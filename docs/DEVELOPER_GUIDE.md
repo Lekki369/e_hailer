@@ -163,3 +163,24 @@ To re-render or update the interactive architecture diagram at any time:
 node .agents/skills/archify/bin/archify.mjs render architecture docs/architecture.json docs/architecture.html
 ```
 Open `docs/architecture.html` in any browser to inspect the interactive nodes, component connections, search, and dark/light modes.
+
+---
+
+## 4. Running Unit & Domain Tests
+
+The application features a zero-codegen unit test suite validating pricing formulas, IATA dimensional metrics, value objects, and serialization:
+
+```bash
+# Run all unit tests
+flutter test
+
+# Run a specific test suite
+flutter test test/features/delivery/domain/pricing_calculator_test.dart
+```
+
+### Key Test Coverage
+- **`PricingCalculator`**: Base vehicle multiplier rates ($1.0\times$ to $3.5\times$), distance fare calculation ($₦120$/km), volumetric & physical surcharge thresholds ($₦80$/kg over 2.0kg), fragile handling fee ($₦300$), 80/20 driver/platform commission splits, and nearest-10 fare rounding.
+- **`ParcelDetails`**: IATA formula $\frac{L \times W \times H}{5000}$, billable weight selection ($\max(\text{Physical}, \text{Volumetric})$), category fallbacks, and serialization.
+- **`PricingDetails`**: Payment method mapping, copyWith immutability, and full map serialization.
+- **`DeliveryOrder` & `LocationPoint`**: Lifecycle statuses (`isOngoing`, `isCompleted`, `isCancelled`), driver GPS assignment, cancellation audit logging, and handover verification OTP.
+- **`UserEntity` & `AppFailure`**: Multi-role support, fleet vehicle attributes, and sealed failure hierarchy.
