@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616271910128",
+    "project_id": "e-hailer-e949f",
+    "storage_bucket": "e-hailer-e949f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616271910128:android:e9c14dacbe9ca752171e35",
+        "android_client_info": {
+          "package_name": "com.example.e_hailer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "FIREBASE_API_KEY_ANDROID_REPLACE_ME"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
