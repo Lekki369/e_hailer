@@ -158,6 +158,39 @@ class LoginScreen extends HookConsumerWidget {
                         )
                       : const Text('Sign In'),
                 ),
+                const SizedBox(height: 16),
+
+                // Divider OR
+                const Row(
+                  children: [
+                    Expanded(child: Divider(color: AppColors.divider)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: AppColors.divider)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Passwordless Phone Number Sign In
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.phone_iphone_rounded,
+                      color: AppColors.primary),
+                  label: const Text('Continue with Phone Number'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.divider),
+                  ),
+                  onPressed: () => context.push(AppRoutes.phoneLoginPath),
+                ),
                 const SizedBox(height: 20),
 
                 // Sign Up Navigation Link

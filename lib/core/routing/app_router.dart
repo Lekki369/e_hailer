@@ -18,7 +18,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authStateAsync.value != null;
       final isAuthFlow = state.matchedLocation == AppRoutes.loginPath ||
           state.matchedLocation == AppRoutes.registerPath ||
-          state.matchedLocation == AppRoutes.forgotPasswordPath;
+          state.matchedLocation == AppRoutes.forgotPasswordPath ||
+          state.matchedLocation == AppRoutes.phoneLoginPath ||
+          state.matchedLocation == AppRoutes.verifyOtpPath;
       final isPublicTracking = state.matchedLocation.startsWith('/track');
       final user = userProfileAsync.value;
 

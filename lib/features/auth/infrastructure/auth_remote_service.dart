@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/domain/failures/app_failure.dart';
@@ -226,6 +227,100 @@ class AuthRemoteService {
       return left(ServerFailure(
         message: 'Failed to dispatch password reset request: $e',
       ));
+    }
+  }
+
+  /// Send SMS OTP verification code to a phone number
+  Future<Either<AppFailure, String>> sendPhoneOtp({
+    required String phoneNumber,
+    int? resendToken,
+  }) async {
+    final completer = Completer<Either<AppFailure, String>>();
+
+    try {
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: phoneNumber.trim(),
+        forceResendingToken: resendToken,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Instant auto-retrieval (primarily Android)
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (!completer.isCompleted) {
+            completer.complete(
+              left(AuthFailure(
+                message: e.message ?? 'Phone verification failed.',
+              )),
+            );
+          }
+        },
+        codeSent: (String verificationId, int? token) {
+          if (!completer.isCompleted) {
+            completer.complete(right(verificationId));
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          // Timeout reached
+        },
+      );
+    } catch (e) {
+      if (!completer.isCompleted) {
+        completer.complete(
+          left(ServerFailure(
+            message: 'Failed to initiate phone verification: $e',
+          )),
+        );
+      }
+    }
+
+    return completer.future;
+  }
+
+  /// Verify SMS OTP code and sign in or initialize profile for user
+  Future<Either<AppFailure, UserEntity>> verifyPhoneOtp({
+    required String verificationId,
+    required String smsCode,
+    required String phoneNumber,
+    UserRole role = UserRole.customer,
+  }) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode.trim(),
+      );
+
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      final uid = userCredential.user?.uid;
+      if (uid == null) {
+        return left(const AuthFailure(message: 'Phone sign-in failed.'));
+      }
+
+      final doc = await _usersRef.doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return right(UserEntity.fromMap(doc.data()!, doc.id));
+      }
+
+      // First-time phone sign in: create initial user profile in Firestore
+      final shortSuffix = phoneNumber.length > 4
+          ? phoneNumber.substring(phoneNumber.length - 4)
+          : '';
+      final newUser = UserEntity(
+        uid: uid,
+        role: role,
+        fullName: 'User $shortSuffix',
+        email: userCredential.user?.email ?? '$phoneNumber@ehailer.app',
+        phone: phoneNumber.trim(),
+        walletBalance: 0.0,
+        rating: 5.0,
+        createdAt: DateTime.now(),
+      );
+
+      await createUserProfile(newUser);
+      return right(newUser);
+    } on FirebaseAuthException catch (e) {
+      return left(AuthFailure(message: e.message ?? 'Invalid OTP code.'));
+    } catch (e) {
+      return left(ServerFailure(message: 'Verification failed: $e'));
     }
   }
 }

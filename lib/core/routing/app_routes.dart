@@ -21,6 +21,12 @@ abstract class AppRoutes {
   static const String loginName = AuthRoutes.loginName;
   static const String loginPath = AuthRoutes.loginPath;
 
+  static const String phoneLoginName = AuthRoutes.phoneLoginName;
+  static const String phoneLoginPath = AuthRoutes.phoneLoginPath;
+
+  static const String verifyOtpName = AuthRoutes.verifyOtpName;
+  static const String verifyOtpPath = AuthRoutes.verifyOtpPath;
+
   static const String registerName = AuthRoutes.registerName;
   static const String registerPath = AuthRoutes.registerPath;
 
