@@ -49,6 +49,11 @@ class AdminDashboardScreen extends HookConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            tooltip: 'Operations Analytics',
+            onPressed: () => context.push(AppRoutes.analyticsDashboardPath),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () => context.push(AppRoutes.profilePath),
           ),
@@ -238,6 +243,39 @@ class AdminDashboardScreen extends HookConsumerWidget {
                       subtitle: 'Public Tracking',
                       onTap: () =>
                           context.push(AppRoutes.publicTrackingPath),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildNavCard(
+                      icon: Icons.analytics_outlined,
+                      label: 'Analytics & KPIs',
+                      subtitle: 'Revenue & Reports',
+                      onTap: () =>
+                          context.push(AppRoutes.analyticsDashboardPath),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _buildNavCard(
+                      icon: Icons.sync_rounded,
+                      label: 'Sync Hub Feeds',
+                      subtitle: 'Realtime Refresh',
+                      onTap: () {
+                        ref.invalidate(allOrdersStreamProvider);
+                        ref.invalidate(fleetDriversStreamProvider);
+                        ref.invalidate(dispatchMetricsStreamProvider);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Operational feeds refreshed'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],

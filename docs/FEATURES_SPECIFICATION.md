@@ -222,3 +222,39 @@ Provides a resilient operational exception and dispute arbitration workflow for 
      - **Approve Customer Refund**: Operators specify refund amount; the system runs an atomic Firestore transaction that increments the customer's wallet balance and logs a `TransactionType.refund` audit entry.
      - **Authorize Return to Hub**: Transitions order to `DeliveryStatus.returnedToHub` with an assigned return tracking code (`RET-WAYBILL-XXXXX`).
      - **Dismiss Claim**: Closes the ticket with documented operator reasoning.
+
+---
+
+## 9. Fleet Analytics & Operations Reporting Console
+*Handled by the **`admin`** analytics architecture (`lib/features/admin/presentation/screens/analytics_dashboard_screen.dart`)*
+
+### Purpose
+Empowers fleet directors, hub managers, and operations controllers with real-time business intelligence, financial health monitoring, fulfillment reliability indicators, and driver performance tracking.
+
+### Technical & Business Rules
+1. **Dynamic Time-Horizon Slicing**:
+   - Operators can slice and aggregate data across **Today**, **Past 7 Days**, **Past 30 Days**, and **All Time**.
+   - Filtering is reactive and computed in memory using Riverpod (`operationsAnalyticsProvider`), eliminating redundant Firestore queries.
+
+2. **Gross Merchandise Volume & Revenue Realization**:
+   - Computes total platform GMV across all booked consignments.
+   - Calculates the platform's **20% platform commission revenue** and the **80% courier net earnings pool** based on actual delivered and in-transit orders.
+   - Computes **Average Order Value (AOV)** to inform pricing threshold decisions.
+
+3. **Settlement Modality Split**:
+   - Provides a visual segmented breakdown comparing **Cash on Delivery (COD)** vs **Digital Prepaid Wallet** payments.
+   - Displays percentage and total count metrics to identify cash handling exposure across the courier network.
+
+4. **Fulfillment Funnel & Reliability**:
+   - Monitors operational completion rates: **Completed** (green), **In Transit** (blue), and **Failed / Cancelled** (red).
+   - Aggregates total physical and volumetric cargo tonnage ($kg$) moved across the platform.
+
+5. **Fleet Vehicle Allocation**:
+   - Tracks booking distribution across four core vehicle classes: **Motorcycle**, **Sedan / Car**, **Cargo Van**, and **Heavy Truck**.
+   - Identifies fleet utilization imbalances for capacity planning.
+
+6. **Driver Performance Leaderboard**:
+   - Identifies top-performing couriers ranked by completed delivery volume.
+   - Highlights courier name, vehicle type, contact phone, overall customer rating ($\star$), and total gross revenue generated.
+   - Recognizes top drivers with podium indicators (🥇, 🥈, 🥉).
+

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/admin_dashboard_screen.dart';
 import '../screens/admin_map_overview_screen.dart';
+import '../screens/analytics_dashboard_screen.dart';
 import '../screens/dispatch_queue_screen.dart';
 import '../screens/driver_management_screen.dart';
 import '../../../delivery/presentation/screens/dispute_management_screen.dart';
@@ -22,6 +23,9 @@ class AdminRoutes {
 
   static const String disputeManagementName = 'dispute-management';
   static const String disputeManagementPath = '/admin/disputes';
+
+  static const String analyticsDashboardName = 'admin-analytics';
+  static const String analyticsDashboardPath = '/admin/analytics';
 
   static final List<RouteBase> routes = [
     GoRoute(
@@ -48,6 +52,11 @@ class AdminRoutes {
       name: disputeManagementName,
       path: disputeManagementPath,
       builder: (context, state) => const DisputeManagementScreen(),
+    ),
+    GoRoute(
+      name: analyticsDashboardName,
+      path: analyticsDashboardPath,
+      builder: (context, state) => const AnalyticsDashboardScreen(),
     ),
   ];
 }

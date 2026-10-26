@@ -85,6 +85,14 @@
         "Driver delivery failure flow for unreachable recipients & inaccessible addresses",
         "Customer damage/loss claims with Admin arbitration, hub return & wallet refunds"
       ]
+    },
+    {
+      "dot": "slate",
+      "title": "Fleet Analytics & BI Engine",
+      "items": [
+        "Dynamic time horizon slicing (Today, 7D, 30D, All-Time) with pure Riverpod aggregation",
+        "Real-time GMV, 80/20 revenue split, fulfillment funnels, and courier leaderboard"
+      ]
     }
   ]
 }

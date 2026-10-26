@@ -308,3 +308,67 @@ flowchart TD
   1. **Authorize Customer Refund**: Instantly credits customer digital wallet balance with audit transaction log.
   2. **Authorize Return to Hub**: Updates shipment to `returnedToHub` with tracking code.
   3. **Dismiss Claim**: Records findings and closes ticket.
+
+---
+
+## 9. Fleet Analytics & Business Intelligence Engine
+
+Operational sustainability requires real-time visibility into revenue streams, driver output, and shipment fulfillment funnels:
+
+```mermaid
+flowchart TD
+    subgraph DataFeeds["Real-time Operational Feeds"]
+        OrdersStream["allOrdersStreamProvider\n(Live Firestore Deliveries)"]
+        DriversStream["fleetDriversStreamProvider\n(Live Firestore Drivers)"]
+        TimeFilter["analyticsTimeRangeProvider\n(Today | 7 Days | 30 Days | All Time)"]
+    end
+
+    subgraph AnalyticsEngine["Analytics Engine (Pure Dart Domain)"]
+        Synthesizer["operationsAnalyticsProvider\n(Pure Riverpod Provider)"]
+        GMVCalc["Financial Engine\n• Gross Merchandise Volume (GMV)\n• 20% Platform Commission\n• 80% Driver Payouts"]
+        FunnelCalc["Fulfillment Funnel\n• Completion Rate (%)\n• Active In-Transit\n• Failure / Return Rate (%)"]
+        ModalitySplit["Settlement Modality\n• COD vs Digital Wallet %"]
+        LeaderboardCalc["Driver Performance Leaderboard\n• Trip Count & Ratings"]
+    end
+
+    subgraph UI["Executive Reporting Console (/admin/analytics)"]
+        AnalyticsScreen["AnalyticsDashboardScreen"]
+        GmvCard["GMV & 80/20 Split Card"]
+        SettlementBar["Modality Split Segmented Bar"]
+        FunnelGrid["Fulfillment Reliability Grid"]
+        VehicleGrid["Fleet Vehicle Allocation Grid"]
+        LeaderboardList["Ranked Courier Leaderboard (🥇, 🥈, 🥉)"]
+    end
+
+    OrdersStream --> Synthesizer
+    DriversStream --> Synthesizer
+    TimeFilter --> Synthesizer
+
+    Synthesizer --> GMVCalc
+    Synthesizer --> FunnelCalc
+    Synthesizer --> ModalitySplit
+    Synthesizer --> LeaderboardCalc
+
+    GMVCalc --> GmvCard
+    ModalitySplit --> SettlementBar
+    FunnelCalc --> FunnelGrid
+    LeaderboardCalc --> LeaderboardList
+    AnalyticsEngine --> AnalyticsScreen
+```
+
+### 1. Dynamic Horizon Slicing
+- Operators toggle between **Today**, **Past 7 Days**, **Past 30 Days**, and **All Time** with reactive instantaneous UI updates.
+- Orders and driver deliveries are filtered purely in-memory via Riverpod without extra database read queries.
+
+### 2. GMV & 80/20 Platform Revenue Engine
+- Automatically aggregates total gross booking values.
+- Realizes the **80% Driver Net Payout** and **20% Platform Commission** split, maintaining consistency with `PricingCalculator`.
+
+### 3. Modality Distribution & Cargo Weight
+- Tracks customer settlement preferences (**Cash on Delivery** vs **Prepaid In-App Digital Wallet**).
+- Computes aggregate physical and volumetric tonnage moved across the courier network in kilograms ($kg$).
+
+### 4. Fleet Vehicle Breakdown & Courier Leaderboard
+- Measures dispatch distribution across vehicle tiers (`Motorcycle`, `Sedan`, `Cargo Van`, `Heavy Truck`).
+- Ranks top-performing couriers by completed trip volume, customer ratings, and total gross delivery value generated.
+
