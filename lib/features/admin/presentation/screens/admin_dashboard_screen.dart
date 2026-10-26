@@ -7,6 +7,7 @@ import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../delivery/domain/value_objects/delivery_status.dart';
+import '../../../delivery/presentation/providers/dispute_providers.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/manual_assignment_modal.dart';
 
@@ -19,6 +20,7 @@ class AdminDashboardScreen extends HookConsumerWidget {
     final metricsAsync = ref.watch(dispatchMetricsStreamProvider);
     final allOrdersAsync = ref.watch(allOrdersStreamProvider);
     final userAsync = ref.watch(currentUserProfileProvider);
+    final pendingDisputes = ref.watch(pendingDisputeCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -210,6 +212,32 @@ class AdminDashboardScreen extends HookConsumerWidget {
                       label: 'Driver Payouts',
                       subtitle: 'Settle Earnings',
                       onTap: () => context.push(AppRoutes.payoutManagementPath),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildNavCard(
+                      icon: Icons.gavel_rounded,
+                      label: 'Disputes & Claims',
+                      subtitle: pendingDisputes > 0
+                          ? '$pendingDisputes Pending Review'
+                          : 'Arbitration',
+                      onTap: () =>
+                          context.push(AppRoutes.disputeManagementPath),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _buildNavCard(
+                      icon: Icons.travel_explore_rounded,
+                      label: 'Waybill Portal',
+                      subtitle: 'Public Tracking',
+                      onTap: () =>
+                          context.push(AppRoutes.publicTrackingPath),
                     ),
                   ),
                 ],

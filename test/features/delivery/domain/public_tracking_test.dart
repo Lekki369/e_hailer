@@ -32,6 +32,8 @@ void main() {
       expect(DeliveryStatus.inTransit.label, equals('In Transit to Destination'));
       expect(DeliveryStatus.arrivedDropoff.label, equals('Arrived at Destination'));
       expect(DeliveryStatus.delivered.label, equals('Delivered'));
+      expect(DeliveryStatus.failedDelivery.label, equals('Delivery Failed'));
+      expect(DeliveryStatus.returnedToHub.label, equals('Returned to Hub'));
       expect(DeliveryStatus.cancelled.label, equals('Cancelled'));
     });
 
@@ -41,6 +43,8 @@ void main() {
       expect(DeliveryStatus.inTransit.isOngoing, isTrue);
       expect(DeliveryStatus.arrivedDropoff.isOngoing, isTrue);
       expect(DeliveryStatus.delivered.isOngoing, isFalse);
+      expect(DeliveryStatus.failedDelivery.isOngoing, isFalse);
+      expect(DeliveryStatus.returnedToHub.isOngoing, isFalse);
       expect(DeliveryStatus.cancelled.isOngoing, isFalse);
     });
   });

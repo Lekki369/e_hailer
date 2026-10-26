@@ -194,3 +194,31 @@ Enables senders, recipients, and third-party customers to monitor the real-time 
 6. **Social Sharing & QR Barcodes**:
    - One-tap link copy (`https://ehailer.app/track/{trackingNumber}`) for SMS or messaging app dispatch.
    - Interactive modal presenting a large 2D QR Code waybill for sorting hub scanning.
+
+---
+
+## 8. Returns, Disputes, & Incident Resolution Engine
+*Handled by the **`delivery`** dispute architecture (`lib/features/delivery/infrastructure/dispute_remote_service.dart`)*
+
+### Purpose
+Provides a resilient operational exception and dispute arbitration workflow for delivery failures, damaged goods, customer overcharges, and hub return routing.
+
+### Technical & Business Rules
+1. **Driver Delivery Failure Flow (`ReportDeliveryIssueModal`)**:
+   - Couriers unable to complete a drop-off can submit a structured report.
+   - Failure Categories: `unreachableRecipient`, `wrongAddress`, `packageRefused`, `damagedItem`, `other`.
+   - Contact Attempt Logging: Couriers log phone call frequency and gate accessibility notes.
+   - Automated Order Lifecycle Update: Transitions the delivery status to `DeliveryStatus.failedDelivery` with an audit note, relieving the driver and freeing up fleet capacity.
+
+2. **Customer Claims & Dispute Flow (`FileDisputeModal`)**:
+   - Customers and recipients can file claims on any ongoing or delivered consignment.
+   - Categories: `damagedItem`, `missingItem`, `fareDispute`, `driverMisconduct`, `other`.
+   - Generates a unique dispute ticket stored in Firestore `/disputes` with status `DisputeStatus.open`.
+
+3. **Operations Arbitration Console (`DisputeManagementScreen` at `/admin/disputes`)**:
+   - Live stream with status filtering: `All`, `Open Review`, `Refunded`, `Returned to Hub`, `Dismissed`.
+   - Real-time search by Waybill number, claimant name, phone number, and incident description.
+   - Multi-Action Resolution Modal:
+     - **Approve Customer Refund**: Operators specify refund amount; the system runs an atomic Firestore transaction that increments the customer's wallet balance and logs a `TransactionType.refund` audit entry.
+     - **Authorize Return to Hub**: Transitions order to `DeliveryStatus.returnedToHub` with an assigned return tracking code (`RET-WAYBILL-XXXXX`).
+     - **Dismiss Claim**: Closes the ticket with documented operator reasoning.

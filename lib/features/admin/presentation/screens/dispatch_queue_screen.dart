@@ -439,6 +439,8 @@ class DispatchQueueScreen extends HookConsumerWidget {
         bg = Colors.green.shade100;
         fg = Colors.green.shade900;
         break;
+      case DeliveryStatus.failedDelivery:
+      case DeliveryStatus.returnedToHub:
       case DeliveryStatus.cancelled:
         bg = Colors.red.shade100;
         fg = Colors.red.shade900;

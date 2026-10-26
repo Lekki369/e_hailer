@@ -6,11 +6,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/presentation/widgets/osm_map_widget.dart';
 import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/value_objects/delivery_status.dart';
 import '../providers/delivery_providers.dart';
+import '../widgets/file_dispute_modal.dart';
 
 class OrderTrackingScreen extends HookConsumerWidget {
   final String orderId;
@@ -292,7 +294,28 @@ class OrderTrackingScreen extends HookConsumerWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 14),
+
+                        // Report Problem / File Dispute Button
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            side: const BorderSide(color: AppColors.divider),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.support_agent_rounded, size: 18),
+                          label: const Text('Report an Issue or File Claim'),
+                          onPressed: () {
+                            final user =
+                                ref.read(currentUserProfileProvider).value;
+                            FileDisputeModal.show(context, order,
+                                currentUser: user);
+                          },
+                        ),
+                        const SizedBox(height: 18),
 
                         // 5. Assigned Driver Card (from MyOGA)
                         if (order.driverId != null) ...[

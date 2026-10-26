@@ -5388,8 +5388,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="640" y="491" class="t-muted" font-size="9" text-anchor="middle">Firestore &amp; OSM Services</text>
         </g>
 
-        <g id="node-firestore_db" data-node-id="firestore_db" data-node-label="Cloud Firestore" tabindex="0" role="button" aria-label="Focus Cloud Firestore, /deliveries, /users, /payouts, Architecture component, Firebase" aria-pressed="false" data-node-kind="database" data-node-sublabel="/deliveries, /users, /payouts" data-node-context="Architecture component" data-node-brand="Firebase" data-node-brand-id="firebase" data-node-brand-status="preset" data-node-brand-source="https://firebase.google.com/brand-guidelines">
-          <title>Cloud Firestore · /deliveries, /users, /payouts · Architecture component · Firebase</title>
+        <g id="node-firestore_db" data-node-id="firestore_db" data-node-label="Cloud Firestore" tabindex="0" role="button" aria-label="Focus Cloud Firestore, /deliveries, /users, /payouts, /disputes, Architecture component, Firebase" aria-pressed="false" data-node-kind="database" data-node-sublabel="/deliveries, /users, /payouts, /disputes" data-node-context="Architecture component" data-node-brand="Firebase" data-node-brand-id="firebase" data-node-brand-status="preset" data-node-brand-source="https://firebase.google.com/brand-guidelines">
+          <title>Cloud Firestore · /deliveries, /users, /payouts, /disputes · Architecture component · Firebase</title>
           <rect x="820" y="320" width="160" height="74" rx="8" class="c-mask"/>
           <rect x="820" y="320" width="160" height="74" rx="8" class="c-database" data-animate="node" style="--step:6" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(826 326) scale(0.6875)">
@@ -5402,7 +5402,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <rect width="16" height="16" rx="4" class="brand-mark-frame"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="900" y="355" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Cloud Firestore</text>
-        <text data-detail="context" x="900" y="371" class="t-muted" font-size="8.7" text-anchor="middle">/deliveries, /users, /payouts</text>
+        <text data-detail="context" x="900" y="371" class="t-muted" font-size="6.3" text-anchor="middle">/deliveries, /users, /payouts, /disputes</text>
         </g>
 
         <g id="node-firebase_auth" data-node-id="firebase_auth" data-node-label="Firebase Auth" tabindex="0" role="button" aria-label="Focus Firebase Auth, Phone OTP &amp; Email Claims, Architecture component, Firebase" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="Phone OTP &amp; Email Claims" data-node-context="Architecture component" data-node-brand="Firebase" data-node-brand-id="firebase" data-node-brand-status="preset" data-node-brand-source="https://firebase.google.com/brand-guidelines">
@@ -5747,6 +5747,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>Unauthenticated access to real-time parcel telemetry via /track/:trackingNumber</li>
           <li>Live OSM map with courier GPS, progress timeline, and 4-digit security PIN alert</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Returns &amp; Dispute Arbitration</h3>
+        </div>
+        <ul>
+          <li>Driver delivery failure flow for unreachable recipients &amp; inaccessible addresses</li>
+          <li>Customer damage/loss claims with Admin arbitration, hub return &amp; wallet refunds</li>
         </ul>
       </div>
     </div>

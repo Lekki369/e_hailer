@@ -13,6 +13,7 @@ import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/value_objects/delivery_status.dart';
 import '../providers/delivery_providers.dart';
+import '../widgets/file_dispute_modal.dart';
 
 /// Public-facing unauthenticated tracking portal for Consignments & Waybills
 class PublicTrackingScreen extends HookConsumerWidget {
@@ -818,6 +819,27 @@ class PublicTrackingScreen extends HookConsumerWidget {
           ),
           onPressed: () {
             _copyTrackingLink(context, order.trackingNumber);
+          },
+        ),
+        SizedBox(height: 10.h),
+
+        // 11. Report Issue / File Dispute
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.textSecondary,
+            side: const BorderSide(color: AppColors.divider),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          icon: const Icon(Icons.support_agent_rounded, size: 18),
+          label: Text(
+            'Report an Issue with this Delivery',
+            style: TextStyle(fontSize: 13.sp),
+          ),
+          onPressed: () {
+            FileDisputeModal.show(context, order);
           },
         ),
         SizedBox(height: 24.h),

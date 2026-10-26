@@ -14,6 +14,7 @@ import '../../../map/presentation/widgets/osm_map_widget.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/value_objects/delivery_status.dart';
 import '../providers/delivery_providers.dart';
+import '../widgets/report_delivery_issue_modal.dart';
 
 class ActiveDeliveryScreen extends HookConsumerWidget {
   final String orderId;
@@ -495,23 +496,47 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
     }
 
     // When at dropoff: Handover Verification PIN
-    return ElevatedButton.icon(
-      icon: const Icon(Icons.pin_rounded),
-      label: const Text('Verify Handover PIN & Complete Delivery'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.secondary,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      onPressed: isUpdating.value
-          ? null
-          : () {
-              _showOtpVerificationDialog(
-                context: context,
-                ref: ref,
-                order: order,
-                driverId: driverId,
-              );
-            },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton.icon(
+          icon: const Icon(Icons.pin_rounded),
+          label: const Text('Verify Handover PIN & Complete Delivery'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.secondary,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+          onPressed: isUpdating.value
+              ? null
+              : () {
+                  _showOtpVerificationDialog(
+                    context: context,
+                    ref: ref,
+                    order: order,
+                    driverId: driverId,
+                  );
+                },
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.report_problem_outlined,
+              size: 16, color: AppColors.error),
+          label: const Text(
+            'Cannot Deliver / Report Issue',
+            style: TextStyle(color: AppColors.error, fontSize: 13),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.error),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          onPressed: () {
+            final user = ref.read(currentUserProfileProvider).value;
+            if (user != null) {
+              ReportDeliveryIssueModal.show(context, order, user);
+            }
+          },
+        ),
+      ],
     );
   }
 

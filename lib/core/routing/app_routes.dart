@@ -49,6 +49,9 @@ abstract class AppRoutes {
   static const String adminMapOverviewName = AdminRoutes.adminMapOverviewName;
   static const String adminMapOverviewPath = AdminRoutes.adminMapOverviewPath;
 
+  static const String disputeManagementName = AdminRoutes.disputeManagementName;
+  static const String disputeManagementPath = AdminRoutes.disputeManagementPath;
+
   // Order Booking & Dispatch
   static const String expressBookingName = DeliveryRoutes.expressBookingName;
   static const String expressBookingPath = DeliveryRoutes.expressBookingPath;

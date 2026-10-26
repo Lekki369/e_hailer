@@ -18,6 +18,8 @@ void main() {
       expect(DeliveryStatus.arrivedDropoff.isOngoing, isTrue);
 
       expect(DeliveryStatus.delivered.isOngoing, isFalse);
+      expect(DeliveryStatus.failedDelivery.isOngoing, isFalse);
+      expect(DeliveryStatus.returnedToHub.isOngoing, isFalse);
       expect(DeliveryStatus.cancelled.isOngoing, isFalse);
     });
 

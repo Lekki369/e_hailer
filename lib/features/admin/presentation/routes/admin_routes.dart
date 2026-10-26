@@ -4,6 +4,7 @@ import '../screens/admin_dashboard_screen.dart';
 import '../screens/admin_map_overview_screen.dart';
 import '../screens/dispatch_queue_screen.dart';
 import '../screens/driver_management_screen.dart';
+import '../../../delivery/presentation/screens/dispute_management_screen.dart';
 
 /// Centralized route definitions for Admin & Dispatcher operations.
 class AdminRoutes {
@@ -18,6 +19,9 @@ class AdminRoutes {
 
   static const String adminMapOverviewName = 'admin-map-overview';
   static const String adminMapOverviewPath = '/admin/map-overview';
+
+  static const String disputeManagementName = 'dispute-management';
+  static const String disputeManagementPath = '/admin/disputes';
 
   static final List<RouteBase> routes = [
     GoRoute(
@@ -39,6 +43,11 @@ class AdminRoutes {
       name: adminMapOverviewName,
       path: adminMapOverviewPath,
       builder: (context, state) => const AdminMapOverviewScreen(),
+    ),
+    GoRoute(
+      name: disputeManagementName,
+      path: disputeManagementPath,
+      builder: (context, state) => const DisputeManagementScreen(),
     ),
   ];
 }

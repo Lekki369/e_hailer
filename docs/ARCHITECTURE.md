@@ -269,3 +269,42 @@ flowchart LR
 ### 4. Direct Communication & Barcode Scanner
 - Displays the assigned driver's full name, vehicle class, rating, and quick one-tap phone contact dialog.
 - Provides an on-screen high-resolution 2D QR Code waybill modal (`QrImageView`) for scanning at hub checkpoints.
+
+---
+
+## 8. Returns, Disputes, & Incident Resolution Architecture
+
+Logistics operations encounter real-world exceptions: damaged parcels, unreachable recipients, inaccessible addresses, or customer claims. `e-Hailer` includes a dedicated arbitration and return-to-hub workflow:
+
+```mermaid
+flowchart TD
+    ExceptionTrigger{"Delivery Incident?"}
+    
+    ExceptionTrigger -- "Driver cannot complete\n(Recipient unreachable / Wrong address)" --> DriverReport["ReportDeliveryIssueModal\n• Category logged\n• Order marked: failedDelivery"]
+    
+    ExceptionTrigger -- "Customer reports issue\n(Damaged parcel / Overcharge)" --> CustomerClaim["FileDisputeModal\n• Claimant details & description\n• Dispute ticket logged in /disputes"]
+    
+    DriverReport --> AdminQueue["Dispute Management Console (/admin/disputes)"]
+    CustomerClaim --> AdminQueue
+    
+    AdminQueue --> ArbitrateAction{"Operator Arbitration"}
+    
+    ArbitrateAction -- "Approve Refund" --> RefundTx["Atomic Customer Wallet Credit\n• +₦ refundAmount\n• Ledger: TransactionType.refund"]
+    ArbitrateAction -- "Return to Hub" --> ReturnLeg["Authorize Return Leg\n• Order marked: returnedToHub\n• returnTrackingNumber assigned"]
+    ArbitrateAction -- "Dismiss Claim" --> DismissTicket["Ticket status: rejected\n• Explanation notes recorded"]
+```
+
+### 1. Driver Delivery Failure Engine (`ReportDeliveryIssueModal`)
+- When a courier is unable to complete dropoff, they can report exceptions with specific categories (`unreachableRecipient`, `wrongAddress`, `packageRefused`, `damagedItem`).
+- Atomically transitions order status to `DeliveryStatus.failedDelivery` with cancellation reasoning and returns the courier safely to the dashboard.
+
+### 2. Customer Dispute & Damage Claim Portal (`FileDisputeModal`)
+- Accessible directly from tracking interfaces (`OrderTrackingScreen` and `PublicTrackingScreen`).
+- Captures claimant name, phone number, category (`damagedItem`, `missingItem`, `fareDispute`, `driverMisconduct`), and detailed incident description.
+
+### 3. Operations Arbitration Console (`DisputeManagementScreen` at `/admin/disputes`)
+- Real-time Firestore stream with status filters: `All`, `Open Review`, `Refunded`, `Returned to Hub`, `Dismissed`.
+- Direct action panel enabling hub operators to:
+  1. **Authorize Customer Refund**: Instantly credits customer digital wallet balance with audit transaction log.
+  2. **Authorize Return to Hub**: Updates shipment to `returnedToHub` with tracking code.
+  3. **Dismiss Claim**: Records findings and closes ticket.
