@@ -165,4 +165,67 @@ class AuthRemoteService {
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
   }
+
+  /// Send password reset instructions by email or phone lookup
+  ///
+  /// If [identifier] is an email address, sends a password reset email directly via FirebaseAuth.
+  /// If [identifier] is a phone number, queries Firestore to resolve the linked email address,
+  /// then triggers the reset email and returns the masked destination email (e.g. 'ol***@gmail.com').
+  Future<Either<AppFailure, String>> sendPasswordReset({
+    required String identifier,
+  }) async {
+    final query = identifier.trim();
+    if (query.isEmpty) {
+      return left(const AuthFailure(
+        message: 'Please enter your registered email address or phone number.',
+      ));
+    }
+
+    try {
+      String targetEmail;
+
+      if (query.contains('@')) {
+        targetEmail = query;
+      } else {
+        // Query user document by registered phone number
+        final querySnap =
+            await _usersRef.where('phone', isEqualTo: query).limit(1).get();
+        if (querySnap.docs.isEmpty) {
+          return left(const AuthFailure(
+            message: 'No account found matching this phone number.',
+          ));
+        }
+        targetEmail = querySnap.docs.first.data()['email'] as String? ?? '';
+        if (targetEmail.isEmpty) {
+          return left(const AuthFailure(
+            message: 'No linked email address found for this phone number.',
+          ));
+        }
+      }
+
+      await _firebaseAuth.sendPasswordResetEmail(email: targetEmail);
+
+      // Mask the destination email for user privacy (e.g., jo***@domain.com)
+      final parts = targetEmail.split('@');
+      final namePart = parts[0];
+      final domainPart = parts.length > 1 ? parts[1] : '';
+      final maskedName = namePart.length > 2
+          ? '${namePart.substring(0, 2)}***'
+          : '${namePart.substring(0, 1)}***';
+      final maskedEmail = '$maskedName@$domainPart';
+
+      return right(maskedEmail);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return left(const AuthFailure(
+          message: 'No account exists with this email address.',
+        ));
+      }
+      return left(AuthFailure(message: e.message ?? 'Password reset error.'));
+    } catch (e) {
+      return left(ServerFailure(
+        message: 'Failed to dispatch password reset request: $e',
+      ));
+    }
+  }
 }
