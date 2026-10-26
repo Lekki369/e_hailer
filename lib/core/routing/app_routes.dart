@@ -7,9 +7,11 @@ library;
 
 import '../../features/auth/presentation/routes/auth_routes.dart';
 import '../../features/delivery/presentation/routes/delivery_routes.dart';
+import '../../features/wallet/presentation/routes/wallet_routes.dart';
 
 export '../../features/auth/presentation/routes/auth_routes.dart';
 export '../../features/delivery/presentation/routes/delivery_routes.dart';
+export '../../features/wallet/presentation/routes/wallet_routes.dart';
 
 /// Universal Route Registry for GoRouter and App Navigation
 abstract class AppRoutes {
@@ -45,4 +47,8 @@ abstract class AppRoutes {
   /// Parameterized tracking path helper
   static String orderTracking(String orderId) =>
       DeliveryRoutes.orderTracking(orderId);
+
+  // Digital Wallet & Ledger
+  static const String walletName = WalletRoutes.walletName;
+  static const String walletPath = WalletRoutes.walletPath;
 }

@@ -34,6 +34,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       ...AuthRoutes.routes,
       ...DeliveryRoutes.routes,
+      ...WalletRoutes.routes,
     ],
   );
 });

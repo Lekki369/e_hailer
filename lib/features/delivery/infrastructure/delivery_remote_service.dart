@@ -182,6 +182,18 @@ class DeliveryRemoteService {
         'walletBalance': FieldValue.increment(driverEarnings),
       });
 
+      // 3. Record driver trip payout in ledger
+      final txRef = driverRef.collection('transactions').doc();
+      batch.set(txRef, {
+        'userId': driverId,
+        'amount': driverEarnings,
+        'type': 'tripPayout',
+        'title': 'Trip Payout (80%)',
+        'description': 'Direct earnings from delivery completion',
+        'referenceId': orderId,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
       await batch.commit();
       return right(unit);
     } catch (e) {

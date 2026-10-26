@@ -1,0 +1,659 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../auth/domain/user_entity.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../providers/wallet_providers.dart';
+
+class WalletScreen extends HookConsumerWidget {
+  const WalletScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userProfileAsync = ref.watch(currentUserProfileProvider);
+    final user = userProfileAsync.value;
+    final transactionsAsync = user != null
+        ? ref.watch(userTransactionsStreamProvider(user.uid))
+        : null;
+
+    final isDriver = user?.role == UserRole.driver;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Digital Wallet & Ledger'),
+      ),
+      body: user == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Digital Balance Card
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryLight],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Available Balance',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                isDriver ? 'DRIVER WALLET' : 'CUSTOMER WALLET',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '₦${user.walletBalance.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Top Up'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.secondary,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  _showTopUpModal(context, ref, user.uid);
+                                },
+                              ),
+                            ),
+                            if (isDriver) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  icon: const Icon(Icons.arrow_upward_rounded,
+                                      size: 18),
+                                  label: const Text('Withdraw'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    _showWithdrawalModal(
+                                      context,
+                                      ref,
+                                      user.uid,
+                                      user.walletBalance,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // 2. Transaction History Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Transaction Ledger',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontSize: 18,
+                            ),
+                      ),
+                      const Icon(
+                        Icons.receipt_long_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (transactionsAsync != null)
+                    transactionsAsync.when(
+                      data: (transactions) {
+                        if (transactions.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(36),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.divider),
+                            ),
+                            child: const Column(
+                              children: [
+                                Icon(
+                                  Icons.receipt_outlined,
+                                  size: 44,
+                                  color: AppColors.textMuted,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'No transactions yet',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Your trip earnings and top-up receipts will appear here.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: transactions.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final tx = transactions[index];
+                            final isCredit = tx.type.isCredit;
+                            final dateFormatted = DateFormat('MMM d, y • h:mm a')
+                                .format(tx.createdAt);
+
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: isCredit
+                                        ? AppColors.success.withValues(alpha: 0.1)
+                                        : AppColors.error.withValues(alpha: 0.1),
+                                    child: Icon(
+                                      isCredit
+                                          ? Icons.arrow_downward_rounded
+                                          : Icons.arrow_upward_rounded,
+                                      size: 20,
+                                      color: isCredit
+                                          ? AppColors.success
+                                          : AppColors.error,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          tx.title,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          dateFormatted,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        if (tx.description.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            tx.description,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${isCredit ? '+' : '-'}₦${tx.amount.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: isCredit
+                                          ? AppColors.success
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text('Error: $e')),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  void _showTopUpModal(BuildContext context, WidgetRef ref, String userId) {
+    final amountController = TextEditingController();
+    final isSubmitting = ValueNotifier<bool>(false);
+    final selectedQuickAmount = ValueNotifier<double?>(null);
+
+    final quickAmounts = [1000.0, 2500.0, 5000.0, 10000.0];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (modalContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Top Up Digital Wallet',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Select or enter the amount you wish to deposit to your wallet.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+
+              // Quick Amount Chips
+              ValueListenableBuilder<double?>(
+                valueListenable: selectedQuickAmount,
+                builder: (context, selected, _) {
+                  return Row(
+                    children: quickAmounts.map((amt) {
+                      final isSelected = selected == amt;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            selectedQuickAmount.value = amt;
+                            amountController.text = amt.toStringAsFixed(0);
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.background,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.divider,
+                              ),
+                            ),
+                            child: Text(
+                              '₦${amt.toStringAsFixed(0)}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Custom Amount (₦)',
+                  prefixText: '₦ ',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              ValueListenableBuilder<bool>(
+                valueListenable: isSubmitting,
+                builder: (context, loading, _) {
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            final amount =
+                                double.tryParse(amountController.text.trim()) ??
+                                    0.0;
+                            if (amount <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Please enter a valid amount.')),
+                              );
+                              return;
+                            }
+
+                            isSubmitting.value = true;
+                            final refId =
+                                'TOP-${DateTime.now().millisecondsSinceEpoch}';
+
+                            final result = await ref
+                                .read(walletRemoteServiceProvider)
+                                .topUpWallet(
+                                  userId: userId,
+                                  amount: amount,
+                                  reference: refId,
+                                );
+
+                            isSubmitting.value = false;
+
+                            result.fold(
+                              (failure) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(failure.message)),
+                                );
+                              },
+                              (_) {
+                                Navigator.of(modalContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppColors.success,
+                                    content: Text(
+                                        'Wallet topped up with ₦${amount.toStringAsFixed(2)}!'),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                    child: loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Proceed to Top Up'),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showWithdrawalModal(BuildContext context, WidgetRef ref, String userId,
+      double currentBalance) {
+    final amountController = TextEditingController();
+    final bankNameController = TextEditingController();
+    final accountNumberController = TextEditingController();
+    final isSubmitting = ValueNotifier<bool>(false);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (modalContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Request Earnings Payout',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Transfer earnings directly to your bank. Available: ₦${currentBalance.toStringAsFixed(2)}',
+                style:
+                    const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Withdrawal Amount (₦)',
+                  prefixText: '₦ ',
+                  suffixIcon: TextButton(
+                    onPressed: () {
+                      amountController.text =
+                          currentBalance.toStringAsFixed(0);
+                    },
+                    child: const Text('MAX'),
+                  ),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              TextField(
+                controller: bankNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Bank Name (e.g. Zenith, Access, GTBank)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              TextField(
+                controller: accountNumberController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '10-Digit Account Number',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              ValueListenableBuilder<bool>(
+                valueListenable: isSubmitting,
+                builder: (context, loading, _) {
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            final amount =
+                                double.tryParse(amountController.text.trim()) ??
+                                    0.0;
+                            final bank = bankNameController.text.trim();
+                            final account = accountNumberController.text.trim();
+
+                            if (amount <= 0 || bank.isEmpty || account.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Please fill all fields accurately.')),
+                              );
+                              return;
+                            }
+
+                            if (amount > currentBalance) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Amount exceeds your available balance.')),
+                              );
+                              return;
+                            }
+
+                            isSubmitting.value = true;
+
+                            final result = await ref
+                                .read(walletRemoteServiceProvider)
+                                .requestWithdrawal(
+                                  userId: userId,
+                                  currentBalance: currentBalance,
+                                  amount: amount,
+                                  bankName: bank,
+                                  accountNumber: account,
+                                );
+
+                            isSubmitting.value = false;
+
+                            result.fold(
+                              (failure) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(failure.message)),
+                                );
+                              },
+                              (_) {
+                                Navigator.of(modalContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppColors.success,
+                                    content: Text(
+                                        'Payout of ₦${amount.toStringAsFixed(2)} requested successfully!'),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                    child: loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Submit Payout Request'),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

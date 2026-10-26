@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
-import '../routes/delivery_routes.dart';
 
 class DriverDashboardScreen extends ConsumerWidget {
   const DriverDashboardScreen({super.key});
@@ -23,6 +23,11 @@ class DriverDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Driver Fleet Terminal'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet_rounded),
+            tooltip: 'Digital Wallet',
+            onPressed: () => context.push(WalletRoute.path),
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () => ref.read(authRemoteServiceProvider).signOut(),
@@ -142,32 +147,46 @@ class DriverDashboardScreen extends ConsumerWidget {
                   const Divider(height: 24),
 
                   // Digital Wallet Quick Balance
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Row(
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => context.push(WalletRoute.path),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.account_balance_wallet_rounded,
-                              size: 18, color: AppColors.secondary),
-                          SizedBox(width: 8),
-                          Text(
-                            'Digital Wallet Earnings',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
+                          const Row(
+                            children: [
+                              Icon(Icons.account_balance_wallet_rounded,
+                                  size: 18, color: AppColors.secondary),
+                              SizedBox(width: 8),
+                              Text(
+                                'Digital Wallet Earnings',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '₦${(driver?.walletBalance ?? 0.0).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.secondary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.chevron_right_rounded,
+                                  size: 20, color: AppColors.textSecondary),
+                            ],
                           ),
                         ],
                       ),
-                      Text(
-                        '₦${(driver?.walletBalance ?? 0.0).toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.secondary,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

@@ -19,6 +19,11 @@ class CustomerHomeScreen extends ConsumerWidget {
         title: const Text('e-Hailer Logistics'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.account_balance_wallet_rounded),
+            tooltip: 'Digital Wallet',
+            onPressed: () => context.push(WalletRoute.path),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () => ref.read(authRemoteServiceProvider).signOut(),
           ),
