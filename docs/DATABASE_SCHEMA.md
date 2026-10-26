@@ -37,6 +37,8 @@ Document Path: `/users/{uid}`
 | `vehicleType` | `string?` | `"bike"` \| `"car"` \| `"van"` \| `"truck"` |
 | `vehiclePlateNumber` | `string?` | e.g. `"LAG-892-AA"` |
 | `vehicleModel`| `string?` | e.g. `"Honda Ace 125"` |
+| `fcmToken` | `string?` | Device Firebase Cloud Messaging registration token |
+| `fcmTokenUpdatedAt` | `string?` (ISO) | Timestamp when token was last refreshed |
 | `createdAt` | `string` (ISO) | Profile creation timestamp |
 
 ---
