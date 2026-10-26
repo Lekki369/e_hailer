@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/login_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/register_screen.dart';
 
 /// Screen-level route definition for Login
 abstract class LoginRoute {
@@ -13,6 +14,19 @@ abstract class LoginRoute {
         path: path,
         name: name,
         builder: (context, state) => const LoginScreen(),
+      );
+}
+
+/// Screen-level route definition for User Registration / Sign Up
+abstract class RegisterRoute {
+  static const String path = '/register';
+  static const String name = 'register';
+
+  /// GoRoute definition for RegisterScreen
+  static GoRoute get route => GoRoute(
+        path: path,
+        name: name,
+        builder: (context, state) => const RegisterScreen(),
       );
 }
 
@@ -34,15 +48,20 @@ abstract class AuthRoutes {
   static const String loginPath = LoginRoute.path;
   static const String loginName = LoginRoute.name;
 
+  static const String registerPath = RegisterRoute.path;
+  static const String registerName = RegisterRoute.name;
+
   static const String profilePath = ProfileRoute.path;
   static const String profileName = ProfileRoute.name;
 
   static GoRoute get loginRoute => LoginRoute.route;
+  static GoRoute get registerRoute => RegisterRoute.route;
   static GoRoute get profileRoute => ProfileRoute.route;
 
   /// All GoRoutes registered by the Auth feature
   static List<GoRoute> get routes => [
         LoginRoute.route,
+        RegisterRoute.route,
         ProfileRoute.route,
       ];
 }

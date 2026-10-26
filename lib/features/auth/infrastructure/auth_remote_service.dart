@@ -58,6 +58,53 @@ class AuthRemoteService {
     }
   }
 
+  /// Sign up a new user with email and password and initialize Firestore profile
+  Future<Either<AppFailure, UserEntity>> signUpWithEmail({
+    required String email,
+    required String password,
+    required String fullName,
+    required String phone,
+    required UserRole role,
+    VehicleType? vehicleType,
+    String? vehiclePlateNumber,
+    String? vehicleModel,
+  }) async {
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+      final uid = credential.user?.uid;
+      if (uid == null) {
+        return left(const AuthFailure(message: 'Registration failed.'));
+      }
+
+      final newUser = UserEntity(
+        uid: uid,
+        role: role,
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        walletBalance: 0.0,
+        rating: 5.0,
+        isAvailable: role == UserRole.driver,
+        vehicleType:
+            role == UserRole.driver ? (vehicleType ?? VehicleType.bike) : null,
+        vehiclePlateNumber:
+            role == UserRole.driver ? vehiclePlateNumber?.trim() : null,
+        vehicleModel: role == UserRole.driver ? vehicleModel?.trim() : null,
+        createdAt: DateTime.now(),
+      );
+
+      final saveResult = await createUserProfile(newUser);
+      return saveResult;
+    } on FirebaseAuthException catch (e) {
+      return left(AuthFailure(message: e.message ?? 'Registration error.'));
+    } catch (e) {
+      return left(ServerFailure(message: 'An unexpected error occurred: $e'));
+    }
+  }
+
   /// Create new user profile in Firestore
   Future<Either<AppFailure, UserEntity>> createUserProfile(
       UserEntity user) async {

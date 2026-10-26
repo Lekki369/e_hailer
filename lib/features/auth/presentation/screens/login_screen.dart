@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../providers/auth_providers.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -138,6 +141,29 @@ class LoginScreen extends HookConsumerWidget {
                         )
                       : const Text('Sign In'),
                 ),
+                const SizedBox(height: 20),
+
+                // Sign Up Navigation Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account?",
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(AppRoutes.registerPath),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),

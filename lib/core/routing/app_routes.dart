@@ -21,6 +21,9 @@ abstract class AppRoutes {
   static const String loginName = AuthRoutes.loginName;
   static const String loginPath = AuthRoutes.loginPath;
 
+  static const String registerName = AuthRoutes.registerName;
+  static const String registerPath = AuthRoutes.registerPath;
+
   static const String profileName = AuthRoutes.profileName;
   static const String profilePath = AuthRoutes.profilePath;
 

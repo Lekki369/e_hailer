@@ -16,18 +16,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authStateAsync.value != null;
-      final isLoggingIn = state.matchedLocation == AppRoutes.loginPath;
+      final isAuthFlow = state.matchedLocation == AppRoutes.loginPath ||
+          state.matchedLocation == AppRoutes.registerPath;
       final isPublicTracking = state.matchedLocation.startsWith('/track');
       final user = userProfileAsync.value;
 
       if (!isLoggedIn) {
-        if (isLoggingIn || isPublicTracking) {
+        if (isAuthFlow || isPublicTracking) {
           return null;
         }
         return AppRoutes.loginPath;
       }
 
-      if (isLoggingIn) {
+      if (isAuthFlow) {
         if (user?.role == UserRole.admin) {
           return AppRoutes.adminDashboardPath;
         }
