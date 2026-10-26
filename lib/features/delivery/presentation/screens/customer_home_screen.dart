@@ -118,7 +118,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                     subtitle: 'Direct bike dispatch with live GPS tracking',
                     badgeColor: AppColors.secondary,
                     onTap: () {
-                      context.push(AppRoutes.expressBookingPath);
+                      context.push(ExpressBookingRoute.path);
                     },
                   ),
                 ),
@@ -130,7 +130,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                     subtitle: 'Volumetric boxes, freight & waybill tracking',
                     badgeColor: AppColors.info,
                     onTap: () {
-                      context.push(AppRoutes.consignmentCreationPath);
+                      context.push(ConsignmentCreationRoute.path);
                     },
                   ),
                 ),
@@ -225,7 +225,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                                 color: AppColors.textSecondary,
                               ),
                               onTap: () {
-                                context.push(AppRoutes.orderTracking(order.id));
+                                context.push(OrderTrackingRoute.pathWithId(order.id));
                               },
                             ),
                           );

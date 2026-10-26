@@ -145,7 +145,7 @@ class ExpressBookingScreen extends HookConsumerWidget {
           );
         },
         (created) {
-          context.pushReplacement(AppRoutes.orderTracking(created.id));
+          context.pushReplacement(OrderTrackingRoute.pathWithId(created.id));
         },
       );
     }

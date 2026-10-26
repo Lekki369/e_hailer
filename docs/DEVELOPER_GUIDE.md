@@ -116,25 +116,31 @@ final walletBalanceStreamProvider = StreamProvider.family<double, String>((ref, 
 });
 ```
 
-### Step 4: Register Route in `AppRoutes` & `GoRouter`
-1. Define the route name and path in [`lib/core/routing/app_routes.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_routes.dart):
+### Step 4: Define Feature Route & Screen GoRoute (`presentation/routes/`)
+1. Create `lib/features/<feature>/presentation/routes/<feature>_routes.dart`:
 ```dart
+abstract class WalletScreenRoute {
+  static const String path = '/wallet';
+  static const String name = 'wallet';
+
+  static GoRoute get route => GoRoute(
+        path: path,
+        name: name,
+        builder: (context, state) => const WalletScreen(),
+      );
+}
+
 abstract class WalletRoutes {
-  static const String walletName = 'wallet';
-  static const String walletPath = '/wallet';
+  static const String walletPath = WalletScreenRoute.path;
+  static const String walletName = WalletScreenRoute.name;
+  static GoRoute get walletRoute => WalletScreenRoute.route;
+  static List<GoRoute> get routes => [WalletScreenRoute.route];
 }
 ```
-2. Add the `GoRoute` in [`lib/core/routing/app_router.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_router.dart):
+2. Export in [`lib/core/routing/app_routes.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_routes.dart) and register `...WalletRoutes.routes` in [`lib/core/routing/app_router.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/core/routing/app_router.dart).
+3. Navigate type-safely in the presentation layer:
 ```dart
-GoRoute(
-  path: WalletRoutes.walletPath,
-  name: WalletRoutes.walletName,
-  builder: (context, state) => const WalletScreen(),
-),
-```
-3. Navigate type-safely in UI:
-```dart
-context.push(WalletRoutes.walletPath);
+context.push(WalletScreenRoute.path);
 ```
 
 ### Step 5: Register Asset Paths in `AppAssets`

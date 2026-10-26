@@ -5,12 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../features/auth/domain/user_entity.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/delivery/presentation/screens/consignment_creation_screen.dart';
-import '../../features/delivery/presentation/screens/customer_home_screen.dart';
-import '../../features/delivery/presentation/screens/driver_dashboard_screen.dart';
-import '../../features/delivery/presentation/screens/express_booking_screen.dart';
-import '../../features/delivery/presentation/screens/order_tracking_screen.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -38,39 +32,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: AppRoutes.loginPath,
-        name: AppRoutes.loginName,
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.customerHomePath,
-        name: AppRoutes.customerHomeName,
-        builder: (context, state) => const CustomerHomeScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.expressBookingPath,
-        name: AppRoutes.expressBookingName,
-        builder: (context, state) => const ExpressBookingScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.consignmentCreationPath,
-        name: AppRoutes.consignmentCreationName,
-        builder: (context, state) => const ConsignmentCreationScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.driverDashboardPath,
-        name: AppRoutes.driverDashboardName,
-        builder: (context, state) => const DriverDashboardScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.orderTrackingPath,
-        name: AppRoutes.orderTrackingName,
-        builder: (context, state) {
-          final orderId = state.pathParameters['orderId'] ?? '';
-          return OrderTrackingScreen(orderId: orderId);
-        },
-      ),
+      ...AuthRoutes.routes,
+      ...DeliveryRoutes.routes,
     ],
   );
 });

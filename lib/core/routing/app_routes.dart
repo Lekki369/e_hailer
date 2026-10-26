@@ -1,34 +1,15 @@
-/// Centralized Route Definitions for e-Hailer
+/// Centralized Route Definitions and Exports for e-Hailer
 ///
-/// Organized by feature modules with unified access via [AppRoutes].
+/// Features define their own [GoRoute] configurations and screen-level route classes
+/// ([LoginRoute], [CustomerHomeRoute], [ExpressBookingRoute], etc.).
+/// [AppRoutes] provides universal shortcuts and paths for the router and navigation.
 library;
 
-/// Routes for Authentication and User Onboarding
-abstract class AuthRoutes {
-  static const String loginName = 'login';
-  static const String loginPath = '/login';
-}
+import '../../features/auth/presentation/routes/auth_routes.dart';
+import '../../features/delivery/presentation/routes/delivery_routes.dart';
 
-/// Routes for Logistics, Courier Hailing, and Consignment Management
-abstract class DeliveryRoutes {
-  static const String customerHomeName = 'home';
-  static const String customerHomePath = '/home';
-
-  static const String driverDashboardName = 'driver';
-  static const String driverDashboardPath = '/driver';
-
-  static const String expressBookingName = 'express-booking';
-  static const String expressBookingPath = '/express-booking';
-
-  static const String consignmentCreationName = 'consignment-creation';
-  static const String consignmentCreationPath = '/consignment-creation';
-
-  static const String orderTrackingName = 'tracking';
-  static const String orderTrackingPath = '/tracking/:orderId';
-
-  /// Helper to generate dynamic parameterized tracking path
-  static String orderTracking(String orderId) => '/tracking/$orderId';
-}
+export '../../features/auth/presentation/routes/auth_routes.dart';
+export '../../features/delivery/presentation/routes/delivery_routes.dart';
 
 /// Universal Route Registry for GoRouter and App Navigation
 abstract class AppRoutes {
@@ -47,13 +28,16 @@ abstract class AppRoutes {
   static const String expressBookingName = DeliveryRoutes.expressBookingName;
   static const String expressBookingPath = DeliveryRoutes.expressBookingPath;
 
-  static const String consignmentCreationName = DeliveryRoutes.consignmentCreationName;
-  static const String consignmentCreationPath = DeliveryRoutes.consignmentCreationPath;
+  static const String consignmentCreationName =
+      DeliveryRoutes.consignmentCreationName;
+  static const String consignmentCreationPath =
+      DeliveryRoutes.consignmentCreationPath;
 
   // Tracking & Lifecycle
   static const String orderTrackingName = DeliveryRoutes.orderTrackingName;
   static const String orderTrackingPath = DeliveryRoutes.orderTrackingPath;
 
   /// Parameterized tracking path helper
-  static String orderTracking(String orderId) => DeliveryRoutes.orderTracking(orderId);
+  static String orderTracking(String orderId) =>
+      DeliveryRoutes.orderTracking(orderId);
 }
