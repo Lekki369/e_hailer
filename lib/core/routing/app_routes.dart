@@ -66,6 +66,13 @@ abstract class AppRoutes {
   static String orderTracking(String orderId) =>
       DeliveryRoutes.orderTracking(orderId);
 
+  static const String publicTrackingName = DeliveryRoutes.publicTrackingName;
+  static const String publicTrackingPath = DeliveryRoutes.publicTrackingPath;
+
+  /// Parameterized public tracking path helper
+  static String publicTracking(String trackingNumber) =>
+      DeliveryRoutes.publicTracking(trackingNumber);
+
   // Digital Wallet & Ledger
   static const String walletName = WalletRoutes.walletName;
   static const String walletPath = WalletRoutes.walletPath;

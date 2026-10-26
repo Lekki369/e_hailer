@@ -156,3 +156,41 @@ Provides a complete financial operating system supporting dual cash/digital sett
      - Fragile Item Surcharge (₦300 if applicable)
      - 80% Driver Earnings vs 20% Platform Commission
      - Payment Method Badge (Cash on Delivery vs Digital Wallet)
+
+---
+
+## 7. Customer Public Tracking Portal & Waybill Deep-Linking Engine
+*Accessible at `/track` and `/track/:trackingNumber`*
+
+### Purpose
+Enables senders, recipients, and third-party customers to monitor the real-time lifecycle of their parcel without logging in or downloading the native app.
+
+### Technical & Business Rules
+1. **Unauthenticated Public Route Security**:
+   - `GoRouter` redirect configuration explicitly excludes `/track` and `/track/*` from the mandatory authentication redirect.
+   - Anyone holding the tracking URL can monitor shipment progress.
+
+2. **Real-Time Tracking Stream (`watchOrderByTrackingNumber`)**:
+   - Streams live Firestore updates using an indexed `where('trackingNumber', isEqualTo: cleanCode)` query.
+   - Automatically re-renders the map with real-time driver coordinates whenever the courier's location updates.
+
+3. **Step-by-Step Delivery Progress Stepper**:
+   - Highlights ongoing vs completed stages:
+     - Stage 1: Shipment Booked / Created.
+     - Stage 2: Courier Assigned / Dispatched.
+     - Stage 3: Parcel Picked Up from Origin.
+     - Stage 4: In Transit / Out for Delivery.
+     - Stage 5: Delivered & Recipient Security PIN Verified.
+   - Displays clear cancellation alerts if the order is aborted.
+
+4. **Recipient Security Handover PIN Verification**:
+   - Displays the cryptographic 4-digit numeric PIN (`recipientSecurityOtp`) on the tracking interface.
+   - Provides clear guidance that this code must only be provided to the dispatch courier upon physical receipt.
+
+5. **Consignment Specifications & Fare Transparency**:
+   - Displays package category, physical weight, dimensions, IATA volumetric weight, and billable weight.
+   - Shows total fare and provides access to the universal fare breakdown modal.
+
+6. **Social Sharing & QR Barcodes**:
+   - One-tap link copy (`https://ehailer.app/track/{trackingNumber}`) for SMS or messaging app dispatch.
+   - Interactive modal presenting a large 2D QR Code waybill for sorting hub scanning.

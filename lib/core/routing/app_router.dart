@@ -16,9 +16,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggedIn = authStateAsync.value != null;
       final isLoggingIn = state.matchedLocation == AppRoutes.loginPath;
+      final isPublicTracking = state.matchedLocation.startsWith('/track');
 
       if (!isLoggedIn) {
-        return isLoggingIn ? null : AppRoutes.loginPath;
+        if (isLoggingIn || isPublicTracking) {
+          return null;
+        }
+        return AppRoutes.loginPath;
       }
 
       if (isLoggingIn) {

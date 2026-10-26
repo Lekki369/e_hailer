@@ -38,7 +38,7 @@ class CustomerHomeScreen extends HookConsumerWidget {
         },
         (foundOrder) {
           searchController.clear();
-          context.push(OrderTrackingRoute.pathWithId(foundOrder.id));
+          context.push(AppRoutes.publicTracking(foundOrder.trackingNumber));
         },
       );
     }
@@ -47,6 +47,11 @@ class CustomerHomeScreen extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('e-Hailer Logistics'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.travel_explore_rounded),
+            tooltip: 'Track Consignment',
+            onPressed: () => context.push(AppRoutes.publicTrackingPath),
+          ),
           IconButton(
             icon: const Icon(Icons.account_balance_wallet_rounded),
             tooltip: 'Digital Wallet',

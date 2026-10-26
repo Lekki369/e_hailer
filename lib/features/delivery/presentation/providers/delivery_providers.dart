@@ -37,3 +37,11 @@ final driverActiveOrdersStreamProvider =
   final service = ref.watch(deliveryRemoteServiceProvider);
   return service.watchDriverActiveOrders(driverId);
 });
+
+/// Stream provider for tracking an order by public tracking or waybill number
+final publicOrderTrackingStreamProvider =
+    StreamProvider.family<Either<AppFailure, DeliveryOrder>, String>(
+        (ref, trackingNumber) {
+  final service = ref.watch(deliveryRemoteServiceProvider);
+  return service.watchOrderByTrackingNumber(trackingNumber);
+});

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -192,6 +193,55 @@ class OrderTrackingScreen extends HookConsumerWidget {
                                     ),
                                   ],
                                 ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Share Public Tracking Link Card
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.divider),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.link_rounded,
+                                      color: AppColors.secondary, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Public Tracking Link',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextButton.icon(
+                                icon: const Icon(Icons.copy_rounded, size: 15),
+                                label: const Text('Copy Link'),
+                                onPressed: () {
+                                  final link =
+                                      'https://ehailer.app/track/${order.trackingNumber}';
+                                  Clipboard.setData(ClipboardData(text: link));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: AppColors.primary,
+                                      content: Text(
+                                          'Shareable link copied: $link'),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),

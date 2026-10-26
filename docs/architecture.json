@@ -5,12 +5,13 @@
     "title": "e-Hailer Flutter Logistics & On-Demand Architecture",
     "output": "architecture.html",
     "quality_profile": "showcase",
-    "viewBox": [1280, 780]
+    "viewBox": [1280, 860]
   },
   "components": [
-    { "id": "customer_ui", "type": "frontend", "label": "Customer App", "sublabel": "Express & Parcel Booking", "pos": [60, 140], "size": [160, 74] },
-    { "id": "driver_ui", "type": "frontend", "label": "Driver Terminal", "sublabel": "Job Broadcast & Handover", "pos": [60, 320], "size": [160, 74] },
-    { "id": "admin_ui", "type": "frontend", "label": "Operations Console", "sublabel": "Dispatch & Fleet Control", "pos": [60, 500], "size": [160, 74] },
+    { "id": "customer_ui", "type": "frontend", "label": "Customer App", "sublabel": "Express & Parcel Booking", "pos": [60, 100], "size": [160, 74] },
+    { "id": "driver_ui", "type": "frontend", "label": "Driver Terminal", "sublabel": "Job Broadcast & Handover", "pos": [60, 260], "size": [160, 74] },
+    { "id": "admin_ui", "type": "frontend", "label": "Operations Console", "sublabel": "Dispatch & Fleet Control", "pos": [60, 420], "size": [160, 74] },
+    { "id": "public_ui", "type": "frontend", "label": "Public Tracking", "sublabel": "Waybill Portal & Deep Links", "pos": [60, 580], "size": [160, 74] },
     
     { "id": "riverpod_router", "type": "backend", "label": "Riverpod + GoRouter", "sublabel": "State Streams & Role Guards", "pos": [300, 320], "size": [170, 74] },
 
@@ -33,7 +34,8 @@
     { "id": "c7", "from": "infra_layer", "to": "firebase_auth", "label": "auth state" },
     { "id": "c8", "from": "customer_ui", "to": "osm_tiles", "label": "renders map", "variant": "dashed" },
     { "id": "c9", "from": "admin_ui", "to": "osm_tiles", "label": "fleet map overview", "variant": "dashed" },
-    { "id": "c10", "from": "infra_layer", "to": "osrm_router", "label": "driving directions & km", "variant": "emphasis" }
+    { "id": "c10", "from": "infra_layer", "to": "osrm_router", "label": "driving directions & km", "variant": "emphasis" },
+    { "id": "c11", "from": "public_ui", "to": "riverpod_router", "label": "public waybill stream", "variant": "emphasis" }
   ],
   "cards": [
     {
@@ -66,6 +68,14 @@
       "items": [
         "Dual settlement: Digital credit (+80%) vs COD platform commission (-20%)",
         "Driver withdrawal flow with Admin Settlement Console at /admin/payouts"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Public Tracking & Waybills",
+      "items": [
+        "Unauthenticated access to real-time parcel telemetry via /track/:trackingNumber",
+        "Live OSM map with courier GPS, progress timeline, and 4-digit security PIN alert"
       ]
     }
   ]

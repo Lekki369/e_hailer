@@ -78,6 +78,43 @@ class DeliveryRemoteService {
     }
   }
 
+  /// Real-time stream of an order queried by its public Waybill / Consignment Tracking Number
+  Stream<Either<AppFailure, DeliveryOrder>> watchOrderByTrackingNumber(
+      String trackingNumber) {
+    final cleanCode = trackingNumber.trim().toUpperCase();
+    if (cleanCode.isEmpty) {
+      return Stream.value(
+        left<AppFailure, DeliveryOrder>(
+          const OrderNotFoundFailure(
+              message: 'Please enter a valid tracking code.'),
+        ),
+      );
+    }
+
+    return _deliveriesRef
+        .where('trackingNumber', isEqualTo: cleanCode)
+        .limit(1)
+        .snapshots()
+        .map<Either<AppFailure, DeliveryOrder>>((snapshot) {
+      if (snapshot.docs.isEmpty) {
+        return left<AppFailure, DeliveryOrder>(
+          OrderNotFoundFailure(
+            message:
+                'No consignment found matching tracking code "$cleanCode".',
+          ),
+        );
+      }
+      final doc = snapshot.docs.first;
+      return right<AppFailure, DeliveryOrder>(
+        DeliveryOrder.fromMap(doc.data(), doc.id),
+      );
+    }).handleError((error) {
+      return left<AppFailure, DeliveryOrder>(
+        ServerFailure(message: 'Tracking stream error: $error'),
+      );
+    });
+  }
+
   /// Stream unassigned express orders within radius for nearby drivers (from MyOGA & Deliverzler)
   Stream<List<DeliveryOrder>> watchAvailableOrders() {
     return _deliveriesRef

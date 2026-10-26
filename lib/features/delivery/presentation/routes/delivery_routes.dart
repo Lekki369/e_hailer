@@ -6,6 +6,7 @@ import '../screens/customer_home_screen.dart';
 import '../screens/driver_dashboard_screen.dart';
 import '../screens/express_booking_screen.dart';
 import '../screens/order_tracking_screen.dart';
+import '../screens/public_tracking_screen.dart';
 
 /// Screen-level route definition for Customer Home
 abstract class CustomerHomeRoute {
@@ -92,6 +93,35 @@ abstract class OrderTrackingRoute {
       );
 }
 
+/// Screen-level route definition for Public Tracking Portal (Consignment & Waybills)
+abstract class PublicTrackingRoute {
+  static const String path = '/track';
+  static const String name = 'public-tracking';
+  static const String paramName = 'public-tracking-detail';
+
+  /// Helper to build parameterized public tracking URL
+  static String pathWithNumber(String trackingNumber) =>
+      '/track/$trackingNumber';
+
+  static GoRoute get route => GoRoute(
+        path: path,
+        name: name,
+        builder: (context, state) => const PublicTrackingScreen(),
+        routes: [
+          GoRoute(
+            path: ':trackingNumber',
+            name: paramName,
+            builder: (context, state) {
+              final trackingNumber =
+                  state.pathParameters['trackingNumber'] ?? '';
+              return PublicTrackingScreen(
+                  initialTrackingNumber: trackingNumber);
+            },
+          ),
+        ],
+      );
+}
+
 /// Feature-level route bundle for Deliveries & Logistics
 abstract class DeliveryRoutes {
   // Path & Name References
@@ -119,6 +149,12 @@ abstract class DeliveryRoutes {
   static String orderTracking(String orderId) =>
       OrderTrackingRoute.pathWithId(orderId);
 
+  static const String publicTrackingPath = PublicTrackingRoute.path;
+  static const String publicTrackingName = PublicTrackingRoute.name;
+
+  static String publicTracking(String trackingNumber) =>
+      PublicTrackingRoute.pathWithNumber(trackingNumber);
+
   // Screen GoRoutes
   static GoRoute get customerHomeRoute => CustomerHomeRoute.route;
   static GoRoute get driverDashboardRoute => DriverDashboardRoute.route;
@@ -126,6 +162,7 @@ abstract class DeliveryRoutes {
   static GoRoute get expressBookingRoute => ExpressBookingRoute.route;
   static GoRoute get consignmentCreationRoute => ConsignmentCreationRoute.route;
   static GoRoute get orderTrackingRoute => OrderTrackingRoute.route;
+  static GoRoute get publicTrackingRoute => PublicTrackingRoute.route;
 
   /// All GoRoutes registered by the Delivery feature
   static List<GoRoute> get routes => [
@@ -135,5 +172,6 @@ abstract class DeliveryRoutes {
         ExpressBookingRoute.route,
         ConsignmentCreationRoute.route,
         OrderTrackingRoute.route,
+        PublicTrackingRoute.route,
       ];
 }

@@ -233,3 +233,39 @@ flowchart TD
 ### 4. Universal Fare Breakdown Modal (`FareBreakdownBottomSheet`)
 - Embedded across Customer Tracking, Driver Delivery Terminal, and Admin Dispatch Queue.
 - Translucently displays Base Fare, Road Distance, Volumetric Excess, Fragile Surcharge, 80/20 Driver/Platform split, and payment badge.
+
+---
+
+## 7. Customer Public Tracking Portal & Waybill Deep-Linking Architecture
+
+To build trust and transparency, shipments are publicly trackable without mandatory account creation or login barriers:
+
+```mermaid
+flowchart LR
+    DeepLink["Public Tracking URL\nhttps://ehailer.app/track/{WAYBILL}"] --> AuthCheck{"GoRouter Guard\nstate.startsWith('/track')"}
+    AuthCheck -- "Unauthenticated" --> AllowPublic["Public Access Granted\n(No Login Required)"]
+    AuthCheck -- "Authenticated" --> AllowPublic
+    
+    AllowPublic --> PublicScreen["PublicTrackingScreen\n(/track/:trackingNumber)"]
+    PublicScreen --> LiveStream["watchOrderByTrackingNumber() Stream"]
+    LiveStream --> LiveMap["Interactive OSM Map\n(Pickup, Dropoff, Live Driver GPS)"]
+    LiveStream --> Timeline["Real-time Delivery Timeline"]
+    LiveStream --> OTPCard["Handover Security PIN Alert\n(Fraud Protection)"]
+    LiveStream --> CourierCard["Assigned Courier & Phone Contact"]
+```
+
+### 1. Zero-Friction Deep Linking (`/track/:trackingNumber`)
+- Customers and recipients can track any shipment by simply following a shared link (`https://ehailer.app/track/WAYBILL-XXXXX`) or navigating to `/track`.
+- The router bypasses authentication for all `/track/*` paths while safeguarding administrative and financial screens.
+
+### 2. Live OpenStreetMap Courier Tracking
+- Renders free OpenStreetMap vector/raster tiles via `OsmMapWidget`.
+- Displays real-time driver coordinates (`driverLatitude`, `driverLongitude`) when the courier is en route, alongside pickup and drop-off markers.
+
+### 3. Fraud-Proof 4-Digit Security PIN Banner
+- Explicitly reminds the recipient of their auto-generated 4-digit handover PIN (`recipientSecurityOtp`).
+- Instructs the recipient to only provide the code once the package has been physically handed over, preventing premature delivery completions.
+
+### 4. Direct Communication & Barcode Scanner
+- Displays the assigned driver's full name, vehicle class, rating, and quick one-tap phone contact dialog.
+- Provides an on-screen high-resolution 2D QR Code waybill modal (`QrImageView`) for scanning at hub checkpoints.
