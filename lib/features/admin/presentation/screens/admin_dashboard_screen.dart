@@ -55,7 +55,13 @@ class AdminDashboardScreen extends HookConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile & Settings',
             onPressed: () => context.push(AppRoutes.profilePath),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
+            onPressed: () => ref.read(authRemoteServiceProvider).signOut(),
           ),
         ],
       ),

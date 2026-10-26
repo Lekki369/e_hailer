@@ -9,6 +9,7 @@ import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
+  final userProfileAsync = ref.watch(currentUserProfileProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.customerHomePath,
@@ -17,6 +18,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authStateAsync.value != null;
       final isLoggingIn = state.matchedLocation == AppRoutes.loginPath;
       final isPublicTracking = state.matchedLocation.startsWith('/track');
+      final user = userProfileAsync.value;
 
       if (!isLoggedIn) {
         if (isLoggingIn || isPublicTracking) {
@@ -26,25 +28,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isLoggingIn) {
-        final userProfile = ref.read(currentUserProfileProvider).value;
-        if (userProfile?.role == UserRole.admin) {
+        if (user?.role == UserRole.admin) {
           return AppRoutes.adminDashboardPath;
         }
-        if (userProfile?.role == UserRole.driver) {
+        if (user?.role == UserRole.driver) {
           return AppRoutes.driverDashboardPath;
         }
         return AppRoutes.customerHomePath;
       }
 
+      // Root landing page redirection based on user role
+      if (state.matchedLocation == AppRoutes.customerHomePath) {
+        if (user?.role == UserRole.admin) {
+          return AppRoutes.adminDashboardPath;
+        }
+        if (user?.role == UserRole.driver) {
+          return AppRoutes.driverDashboardPath;
+        }
+      }
+
       // Role-based protection for Admin routes
       final isAdminRoute = state.matchedLocation.startsWith('/admin');
-      if (isAdminRoute) {
-        final userProfile = ref.read(currentUserProfileProvider).value;
-        if (userProfile != null && userProfile.role != UserRole.admin) {
-          return userProfile.role == UserRole.driver
-              ? AppRoutes.driverDashboardPath
-              : AppRoutes.customerHomePath;
-        }
+      if (isAdminRoute && user != null && user.role != UserRole.admin) {
+        return user.role == UserRole.driver
+            ? AppRoutes.driverDashboardPath
+            : AppRoutes.customerHomePath;
+      }
+
+      // Role-based protection for Driver fleet terminal
+      final isDriverRoute =
+          state.matchedLocation == AppRoutes.driverDashboardPath;
+      if (isDriverRoute && user != null && user.role != UserRole.driver) {
+        return user.role == UserRole.admin
+            ? AppRoutes.adminDashboardPath
+            : AppRoutes.customerHomePath;
       }
 
       return null;
