@@ -17,7 +17,7 @@
     { "id": "domain_layer", "type": "backend", "label": "Domain Layer", "sublabel": "Equatable Entities & Calculator", "pos": [550, 180], "size": [180, 74] },
     { "id": "infra_layer", "type": "backend", "label": "Infrastructure Services", "sublabel": "Firestore & OSM Services", "pos": [550, 440], "size": [180, 74] },
 
-    { "id": "firestore_db", "type": "database", "label": "Cloud Firestore", "sublabel": "/deliveries, /users", "brand": "firebase", "pos": [820, 320], "size": [160, 74] },
+    { "id": "firestore_db", "type": "database", "label": "Cloud Firestore", "sublabel": "/deliveries, /users, /payouts", "brand": "firebase", "pos": [820, 320], "size": [160, 74] },
     { "id": "firebase_auth", "type": "cloud", "label": "Firebase Auth", "sublabel": "Phone OTP & Email Claims", "brand": "firebase", "pos": [820, 500], "size": [160, 74] },
 
     { "id": "osm_tiles", "type": "external", "label": "OpenStreetMap", "sublabel": "Free Raster Tiles", "pos": [1060, 140], "size": [160, 74] },
@@ -58,6 +58,14 @@
       "items": [
         "Multi-role ecosystem: Customer, Fleet Driver, and Hub Dispatcher",
         "Live order queue, manual assignment modal, and real-time fleet map overview"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Wallet & Payout Settlement",
+      "items": [
+        "Dual settlement: Digital credit (+80%) vs COD platform commission (-20%)",
+        "Driver withdrawal flow with Admin Settlement Console at /admin/payouts"
       ]
     }
   ]

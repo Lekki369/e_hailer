@@ -7,6 +7,7 @@ import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../delivery/domain/entities/delivery_order.dart';
 import '../../../delivery/domain/value_objects/delivery_status.dart';
+import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/manual_assignment_modal.dart';
 
@@ -329,12 +330,29 @@ class DispatchQueueScreen extends HookConsumerWidget {
                   ),
                 ],
               ),
-              Text(
-                '₦${order.pricing.totalFare.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+              InkWell(
+                onTap: () => FareBreakdownBottomSheet.show(context, order),
+                borderRadius: BorderRadius.circular(8.r),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                  child: Row(
+                    children: [
+                      Text(
+                        '₦${order.pricing.totalFare.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Icon(
+                        Icons.info_outline,
+                        size: 14.w,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

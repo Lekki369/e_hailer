@@ -659,6 +659,12 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                             isVerifying.value = true;
                             errorMessage.value = null;
 
+                            final platformCommission =
+                                order.pricing.platformCommission ??
+                                    (order.pricing.totalFare * 0.2);
+                            final isCod = order.pricing.paymentMethod.name ==
+                                'cashOnDelivery';
+
                             final result = await ref
                                 .read(deliveryRemoteServiceProvider)
                                 .verifyAndCompleteDelivery(
@@ -668,6 +674,10 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                                   expectedOtp:
                                       order.recipientSecurityOtp ?? '',
                                   driverEarnings: driverEarnings,
+                                  platformCommission: platformCommission,
+                                  paymentMethod:
+                                      order.pricing.paymentMethod.name,
+                                  trackingNumber: order.trackingNumber,
                                 );
 
                             isVerifying.value = false;
@@ -682,7 +692,9 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                                   SnackBar(
                                     backgroundColor: AppColors.success,
                                     content: Text(
-                                      'Handover verified! ₦${driverEarnings.toStringAsFixed(0)} credited to your digital wallet.',
+                                      isCod
+                                          ? 'Handover verified! Cash collected. ₦${platformCommission.toStringAsFixed(0)} commission deducted from digital wallet.'
+                                          : 'Handover verified! ₦${driverEarnings.toStringAsFixed(0)} credited to your digital wallet.',
                                     ),
                                   ),
                                 );

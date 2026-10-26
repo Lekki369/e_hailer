@@ -190,13 +190,26 @@ class AdminDashboardScreen extends HookConsumerWidget {
                       onTap: () => context.push(AppRoutes.adminMapOverviewPath),
                     ),
                   ),
-                  SizedBox(width: 10.w),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
                   Expanded(
                     child: _buildNavCard(
                       icon: Icons.groups,
                       label: 'Fleet Roster',
                       subtitle: 'Manage Drivers',
                       onTap: () => context.push(AppRoutes.driverManagementPath),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: _buildNavCard(
+                      icon: Icons.payments_outlined,
+                      label: 'Driver Payouts',
+                      subtitle: 'Settle Earnings',
+                      onTap: () => context.push(AppRoutes.payoutManagementPath),
                     ),
                   ),
                 ],

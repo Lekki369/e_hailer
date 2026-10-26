@@ -187,6 +187,9 @@ class DeliveryRemoteService {
     required String inputOtp,
     required String expectedOtp,
     required double driverEarnings,
+    double platformCommission = 0.0,
+    String paymentMethod = 'wallet',
+    String trackingNumber = '',
   }) async {
     if (inputOtp.trim() != expectedOtp.trim()) {
       return left(const InvalidOtpFailure(
@@ -196,31 +199,52 @@ class DeliveryRemoteService {
 
     try {
       final batch = _firestore.batch();
+      final isCod = paymentMethod == 'cashOnDelivery';
 
-      // 1. Update order status to delivered
+      // 1. Update order status to delivered and marked paid
       final orderRef = _deliveriesRef.doc(orderId);
       batch.update(orderRef, {
         'status': DeliveryStatus.delivered.name,
         'deliveredAt': DateTime.now().toIso8601String(),
+        'pricing.isPaid': true,
+        'isSettled': true,
       });
 
-      // 2. Credit driver digital wallet with 80% net earnings
       final driverRef = _firestore.collection('users').doc(driverId);
-      batch.update(driverRef, {
-        'walletBalance': FieldValue.increment(driverEarnings),
-      });
-
-      // 3. Record driver trip payout in ledger
       final txRef = driverRef.collection('transactions').doc();
-      batch.set(txRef, {
-        'userId': driverId,
-        'amount': driverEarnings,
-        'type': 'tripPayout',
-        'title': 'Trip Payout (80%)',
-        'description': 'Direct earnings from delivery completion',
-        'referenceId': orderId,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+
+      if (isCod) {
+        // Driver collected 100% physical cash. Deduct 20% platform commission from digital wallet.
+        batch.update(driverRef, {
+          'walletBalance': FieldValue.increment(-platformCommission),
+        });
+
+        batch.set(txRef, {
+          'userId': driverId,
+          'amount': platformCommission,
+          'type': 'codCommission',
+          'title': 'COD Platform Commission (20%)',
+          'description':
+              'Commission on cash collected for Waybill $trackingNumber',
+          'referenceId': orderId,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+      } else {
+        // Digital payment: Credit driver digital wallet with 80% net earnings
+        batch.update(driverRef, {
+          'walletBalance': FieldValue.increment(driverEarnings),
+        });
+
+        batch.set(txRef, {
+          'userId': driverId,
+          'amount': driverEarnings,
+          'type': 'tripPayout',
+          'title': 'Trip Payout (80%)',
+          'description': 'Direct earnings from delivery completion',
+          'referenceId': orderId,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+      }
 
       await batch.commit();
       return right(unit);

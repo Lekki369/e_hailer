@@ -182,3 +182,54 @@ The `admin` module elevates `e-Hailer` from a mobile app into a complete logisti
   - Green markers for available online drivers with live GPS coordinates.
   - Orange/Primary markers for pending order pickup locations.
   - Interactive tap cards to inspect details and assign orders directly from the map.
+
+---
+
+## 6. Payment, COD Commission Settlement, & Driver Payout Lifecycle
+
+The platform implements a dual payment architecture handling both prepaid digital transactions and physical Cash on Delivery (COD):
+
+```mermaid
+flowchart TD
+    OrderCompletion["Handover Verification PIN Verified"] --> PaymentType{"Payment Method?"}
+    
+    PaymentType -- "Digital Wallet / Card" --> DigitalSettlement["Digital Settlement\n• Customer paid upfront\n• Credit Driver: +80% net earnings\n• Platform retains: 20% commission"]
+    
+    PaymentType -- "Cash on Delivery (COD)" --> CodSettlement["COD Settlement\n• Driver collected 100% cash in hand\n• Deduct Driver Wallet: -20% platform commission\n• Ledger: codCommission"]
+    
+    DigitalSettlement --> DriverWallet["Driver Wallet Balance Updated"]
+    CodSettlement --> DriverWallet
+    
+    DriverWallet --> PayoutRequestAction["Driver requests withdrawal via PayoutRequestModal"]
+    PayoutRequestAction --> PayoutPending["PayoutRequest status: pending\n• Locked amount deducted from wallet"]
+    
+    PayoutPending --> AdminReview{"Admin Payout Console (/admin/payouts)"}
+    AdminReview -- "Approve & Transfer" --> PayoutSettled["status: settled\n• Bank transfer ref recorded"]
+    AdminReview -- "Reject & Revert" --> PayoutRejected["status: rejected\n• Amount refunded back to Driver Wallet\n• Ledger: payoutReversal"]
+```
+
+### 1. Cash on Delivery (COD) vs Digital Settlement Mechanics
+- **Digital Payment (`wallet` / `card`)**:
+  - The customer is debited upon booking.
+  - Upon delivery PIN verification, the system runs an atomic Firestore transaction crediting the driver's wallet with **80%** of the gross fare (`PricingDetails.driverEarnings`).
+  - Ledger entry: `TransactionType.deliveryEarnings`.
+- **Cash on Delivery (`cashOnDelivery`)**:
+  - The driver collects **100%** of the gross fare in cash directly from the recipient.
+  - To collect the platform's cut, the driver's digital wallet balance is atomically debited by **20%** (`PricingDetails.platformCommission`).
+  - Ledger entry: `TransactionType.codCommission`.
+
+### 2. Driver Withdrawal & Payout Workflow (`PayoutRequestModal`)
+- Fleet drivers access their wallet terminal to submit payout requests to any verified Nigerian commercial bank or Neobank (Access, GTBank, Zenith, Kuda, Moniepoint, etc.).
+- Preset chips (`₦2,000`, `₦5,000`, `₦10,000`, `All`) and 10-digit NUBAN validation.
+- Submitting locks the requested amount immediately to prevent double-spending.
+
+### 3. Admin Payout Settlement Console (`PayoutManagementScreen`)
+- Dedicated command route at `/admin/payouts`.
+- Filterable tabs: `All`, `Pending Review`, `Settled`, `Rejected`.
+- Real-time search across driver names, phone numbers, and destination account numbers.
+- **Approve & Mark Settled**: Records administrator ID, processing timestamp, and bank reference.
+- **Reject & Refund**: Prompts for a rejection reason, transitions status to `rejected`, and atomically credits the locked funds back into the driver's digital wallet with a `payoutReversal` transaction.
+
+### 4. Universal Fare Breakdown Modal (`FareBreakdownBottomSheet`)
+- Embedded across Customer Tracking, Driver Delivery Terminal, and Admin Dispatch Queue.
+- Translucently displays Base Fare, Road Distance, Volumetric Excess, Fragile Surcharge, 80/20 Driver/Platform split, and payment badge.

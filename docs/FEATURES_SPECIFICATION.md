@@ -120,3 +120,39 @@ Transforms e-Hailer from a client-driver hailing app into a comprehensive logist
      - Online driver locations (green vehicle markers).
      - Active pickup points (orange parcel markers).
    - Tapping any pin presents detailed operational metadata and direct assignment actions.
+
+---
+
+## 6. Payment, Wallet Settlement, & Driver Payout Engine
+*Handled by the **`wallet`** feature module (`lib/features/wallet/`)*
+
+### Purpose
+Provides a complete financial operating system supporting dual cash/digital settlement, fair 80/20 driver revenue splitting, driver withdrawal requests, and administrative payout processing.
+
+### Technical & Business Rules
+1. **Dual Payment Modalities**:
+   - **`PaymentMethod.wallet` / `card`**: Customer pays up front. Upon successful delivery verification with the 4-digit recipient PIN, `DeliveryRemoteService.verifyAndCompleteDelivery()` credits the driver's wallet with 80% net earnings (`TransactionType.deliveryEarnings`).
+   - **`PaymentMethod.cashOnDelivery`**: Recipient pays cash to the driver upon handover. Since the driver has 100% in cash, the platform's 20% commission fee is deducted from the driver's digital wallet (`TransactionType.codCommission`).
+
+2. **Driver Payout Request Flow (`PayoutRequestModal`)**:
+   - Drivers with positive wallet balance can initiate withdrawals at any time.
+   - Bank Selection: Major Nigerian banks and FinTechs (Access, GTBank, Zenith, First Bank, UBA, Kuda, OPay, Moniepoint, etc.).
+   - Amount Selection: Quick preset chips (`₦2,000`, `₦5,000`, `₦10,000`, `All`) or custom amount up to the current balance.
+   - Balance Locking: The requested amount is instantly debited from the driver's `walletBalance` upon request creation to prevent double withdrawals, creating a `PayoutRequest` in `pending` status.
+
+3. **Admin Payout Management Console (`PayoutManagementScreen` at `/admin/payouts`)**:
+   - Status Filters: `All`, `Pending Review`, `Settled`, `Rejected`.
+   - Real-time search by driver name, phone number, and bank account number.
+   - Action Modal 1: **Approve & Mark Settled** — Operator inputs or confirms bank transfer transaction reference; status transitions to `PayoutStatus.settled`.
+   - Action Modal 2: **Reject & Refund** — Operator inputs reason for rejection (e.g., incorrect account name). Status transitions to `PayoutStatus.rejected` and the requested amount is atomically refunded back into the driver's wallet balance with a `TransactionType.payoutReversal` entry.
+
+4. **Universal Fare Breakdown Bottom Sheet (`FareBreakdownBottomSheet`)**:
+   - Accessible from Customer Tracking (`OrderTrackingScreen`), Driver Terminal (`ActiveDeliveryScreen`), and Admin Queue (`DispatchQueueScreen`).
+   - Detailed visual breakdown showing:
+     - Gross Fare Total
+     - Vehicle Base Fare (with vehicle multiplier)
+     - Distance Charge (₦120/km)
+     - Billable Weight & Volumetric Surcharge (₦80/kg over 2kg)
+     - Fragile Item Surcharge (₦300 if applicable)
+     - 80% Driver Earnings vs 20% Platform Commission
+     - Payment Method Badge (Cash on Delivery vs Digital Wallet)

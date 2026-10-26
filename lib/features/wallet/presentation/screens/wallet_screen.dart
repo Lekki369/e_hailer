@@ -6,6 +6,7 @@ import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/wallet_providers.dart';
+import '../widgets/payout_request_modal.dart';
 
 class WalletScreen extends HookConsumerWidget {
   const WalletScreen({super.key});
@@ -130,12 +131,7 @@ class WalletScreen extends HookConsumerWidget {
                                     ),
                                   ),
                                   onPressed: () {
-                                    _showWithdrawalModal(
-                                      context,
-                                      ref,
-                                      user.uid,
-                                      user.walletBalance,
-                                    );
+                                    PayoutRequestModal.show(context, user);
                                   },
                                 ),
                               ),
@@ -476,177 +472,6 @@ class WalletScreen extends HookConsumerWidget {
                             ),
                           )
                         : const Text('Proceed to Top Up'),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showWithdrawalModal(BuildContext context, WidgetRef ref, String userId,
-      double currentBalance) {
-    final amountController = TextEditingController();
-    final bankNameController = TextEditingController();
-    final accountNumberController = TextEditingController();
-    final isSubmitting = ValueNotifier<bool>(false);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (modalContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Request Earnings Payout',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Transfer earnings directly to your bank. Available: ₦${currentBalance.toStringAsFixed(2)}',
-                style:
-                    const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Withdrawal Amount (₦)',
-                  prefixText: '₦ ',
-                  suffixIcon: TextButton(
-                    onPressed: () {
-                      amountController.text =
-                          currentBalance.toStringAsFixed(0);
-                    },
-                    child: const Text('MAX'),
-                  ),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: bankNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Bank Name (e.g. Zenith, Access, GTBank)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: accountNumberController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: '10-Digit Account Number',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              ValueListenableBuilder<bool>(
-                valueListenable: isSubmitting,
-                builder: (context, loading, _) {
-                  return ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: loading
-                        ? null
-                        : () async {
-                            final amount =
-                                double.tryParse(amountController.text.trim()) ??
-                                    0.0;
-                            final bank = bankNameController.text.trim();
-                            final account = accountNumberController.text.trim();
-
-                            if (amount <= 0 || bank.isEmpty || account.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Please fill all fields accurately.')),
-                              );
-                              return;
-                            }
-
-                            if (amount > currentBalance) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Amount exceeds your available balance.')),
-                              );
-                              return;
-                            }
-
-                            isSubmitting.value = true;
-
-                            final result = await ref
-                                .read(walletRemoteServiceProvider)
-                                .requestWithdrawal(
-                                  userId: userId,
-                                  currentBalance: currentBalance,
-                                  amount: amount,
-                                  bankName: bank,
-                                  accountNumber: account,
-                                );
-
-                            isSubmitting.value = false;
-
-                            result.fold(
-                              (failure) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(failure.message)),
-                                );
-                              },
-                              (_) {
-                                Navigator.of(modalContext).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: AppColors.success,
-                                    content: Text(
-                                        'Payout of ₦${amount.toStringAsFixed(2)} requested successfully!'),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                    child: loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('Submit Payout Request'),
                   );
                 },
               ),

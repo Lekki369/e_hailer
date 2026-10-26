@@ -69,4 +69,9 @@ abstract class AppRoutes {
   // Digital Wallet & Ledger
   static const String walletName = WalletRoutes.walletName;
   static const String walletPath = WalletRoutes.walletPath;
+
+  static const String payoutManagementName =
+      WalletRoutes.payoutManagementName;
+  static const String payoutManagementPath =
+      WalletRoutes.payoutManagementPath;
 }

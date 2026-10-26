@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../map/presentation/widgets/osm_map_widget.dart';
+import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/value_objects/delivery_status.dart';
 import '../providers/delivery_providers.dart';
@@ -191,6 +192,52 @@ class OrderTrackingScreen extends HookConsumerWidget {
                                     ),
                                   ],
                                 ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Financial Fare Breakdown summary
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.divider),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Delivery Fare',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  Text(
+                                    '₦${order.pricing.totalFare.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextButton.icon(
+                                icon: const Icon(Icons.receipt_long, size: 16),
+                                label: const Text('View Breakdown'),
+                                onPressed: () {
+                                  FareBreakdownBottomSheet.show(context, order);
+                                },
                               ),
                             ],
                           ),
