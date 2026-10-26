@@ -33,6 +33,10 @@ class DeliveryOrder extends Equatable {
   final String? proofOfDeliverySignatureUrl;
   final String? proofOfDeliveryPhotoUrl;
   final String? cancellationReason;
+  final String? cancelledByRole;
+  final DateTime? cancelledAt;
+  final double? customerRating;
+  final String? customerReview;
   final String? recipientSecurityOtp;
 
   const DeliveryOrder({
@@ -62,6 +66,10 @@ class DeliveryOrder extends Equatable {
     this.proofOfDeliverySignatureUrl,
     this.proofOfDeliveryPhotoUrl,
     this.cancellationReason,
+    this.cancelledByRole,
+    this.cancelledAt,
+    this.customerRating,
+    this.customerReview,
     this.recipientSecurityOtp,
   });
 
@@ -92,6 +100,10 @@ class DeliveryOrder extends Equatable {
     String? proofOfDeliverySignatureUrl,
     String? proofOfDeliveryPhotoUrl,
     String? cancellationReason,
+    String? cancelledByRole,
+    DateTime? cancelledAt,
+    double? customerRating,
+    String? customerReview,
     String? recipientSecurityOtp,
   }) {
     return DeliveryOrder(
@@ -124,6 +136,10 @@ class DeliveryOrder extends Equatable {
       proofOfDeliveryPhotoUrl:
           proofOfDeliveryPhotoUrl ?? this.proofOfDeliveryPhotoUrl,
       cancellationReason: cancellationReason ?? this.cancellationReason,
+      cancelledByRole: cancelledByRole ?? this.cancelledByRole,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      customerRating: customerRating ?? this.customerRating,
+      customerReview: customerReview ?? this.customerReview,
       recipientSecurityOtp: recipientSecurityOtp ?? this.recipientSecurityOtp,
     );
   }
@@ -156,6 +172,10 @@ class DeliveryOrder extends Equatable {
       'proofOfDeliverySignatureUrl': proofOfDeliverySignatureUrl,
       'proofOfDeliveryPhotoUrl': proofOfDeliveryPhotoUrl,
       'cancellationReason': cancellationReason,
+      'cancelledByRole': cancelledByRole,
+      'cancelledAt': cancelledAt?.toIso8601String(),
+      'customerRating': customerRating,
+      'customerReview': customerReview,
       'recipientSecurityOtp': recipientSecurityOtp,
     };
   }
@@ -215,6 +235,12 @@ class DeliveryOrder extends Equatable {
           map['proofOfDeliverySignatureUrl'] as String?,
       proofOfDeliveryPhotoUrl: map['proofOfDeliveryPhotoUrl'] as String?,
       cancellationReason: map['cancellationReason'] as String?,
+      cancelledByRole: map['cancelledByRole'] as String?,
+      cancelledAt: map['cancelledAt'] != null
+          ? DateTime.tryParse(map['cancelledAt'].toString())
+          : null,
+      customerRating: (map['customerRating'] as num?)?.toDouble(),
+      customerReview: map['customerReview'] as String?,
       recipientSecurityOtp: map['recipientSecurityOtp'] as String?,
     );
   }
@@ -233,5 +259,8 @@ class DeliveryOrder extends Equatable {
         distanceKm,
         pricing,
         createdAt,
+        cancellationReason,
+        customerRating,
+        customerReview,
       ];
 }

@@ -228,4 +228,55 @@ class DeliveryRemoteService {
       return left(ServerFailure(message: 'Failed to verify and complete delivery: $e'));
     }
   }
+
+  /// Cancel an ongoing order with structured reason
+  Future<Either<AppFailure, Unit>> cancelOrder({
+    required String orderId,
+    required String reason,
+    required String cancelledByRole,
+  }) async {
+    try {
+      await _deliveriesRef.doc(orderId).update({
+        'status': DeliveryStatus.cancelled.name,
+        'cancellationReason': reason,
+        'cancelledByRole': cancelledByRole,
+        'cancelledAt': DateTime.now().toIso8601String(),
+      });
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to cancel order: $e'));
+    }
+  }
+
+  /// Rate a completed delivery and leave feedback for the driver
+  Future<Either<AppFailure, Unit>> rateDeliveryOrder({
+    required String orderId,
+    required String driverId,
+    required double rating,
+    required String review,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // 1. Update order document with rating and review
+      final orderRef = _deliveriesRef.doc(orderId);
+      batch.update(orderRef, {
+        'customerRating': rating,
+        'customerReview': review.trim(),
+      });
+
+      // 2. Update driver profile rating in users collection
+      if (driverId.isNotEmpty) {
+        final driverRef = _firestore.collection('users').doc(driverId);
+        batch.update(driverRef, {
+          'rating': rating,
+        });
+      }
+
+      await batch.commit();
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to submit rating: $e'));
+    }
+  }
 }

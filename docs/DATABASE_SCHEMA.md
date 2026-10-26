@@ -70,6 +70,10 @@ Document Path: `/deliveries/{deliveryId}`
 | `pickedUpAt` | `string?` (ISO) | Timestamp when driver picked up package |
 | `deliveredAt` | `string?` (ISO) | Timestamp when order was marked completed |
 | `cancellationReason` | `string?` | Optional cancellation explanation |
+| `cancelledByRole` | `string?` | `"customer"` \| `"driver"` |
+| `cancelledAt` | `string?` (ISO) | Timestamp when order was cancelled |
+| `customerRating` | `number?` | Rating given by customer (1.0 - 5.0) |
+| `customerReview` | `string?` | Optional customer feedback notes |
 
 ---
 

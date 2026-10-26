@@ -397,44 +397,78 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
     final remoteService = ref.read(deliveryRemoteServiceProvider);
 
     if (order.status == DeliveryStatus.assigned) {
-      return ElevatedButton.icon(
-        icon: const Icon(Icons.location_on_rounded),
-        label: const Text('Arrived at Pickup Location'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        onPressed: isUpdating.value
-            ? null
-            : () async {
-                isUpdating.value = true;
-                await remoteService.updateStatus(
-                  orderId: order.id,
-                  status: DeliveryStatus.arrivedPickup,
-                );
-                isUpdating.value = false;
-              },
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.location_on_rounded),
+            label: const Text('Arrived at Pickup Location'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: isUpdating.value
+                ? null
+                : () async {
+                    isUpdating.value = true;
+                    await remoteService.updateStatus(
+                      orderId: order.id,
+                      status: DeliveryStatus.arrivedPickup,
+                    );
+                    isUpdating.value = false;
+                  },
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            icon: const Icon(Icons.cancel_outlined,
+                size: 16, color: AppColors.error),
+            label: const Text(
+              'Cancel Delivery Assignment',
+              style: TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+            onPressed: () {
+              _showDriverCancellationDialog(context, ref, order);
+            },
+          ),
+        ],
       );
     }
 
     if (order.status == DeliveryStatus.arrivedPickup) {
-      return ElevatedButton.icon(
-        icon: const Icon(Icons.inventory_rounded),
-        label: const Text('Package Collected / Start Trip'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        onPressed: isUpdating.value
-            ? null
-            : () async {
-                isUpdating.value = true;
-                await remoteService.updateStatus(
-                  orderId: order.id,
-                  status: DeliveryStatus.inTransit,
-                );
-                isUpdating.value = false;
-              },
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.inventory_rounded),
+            label: const Text('Package Collected / Start Trip'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: isUpdating.value
+                ? null
+                : () async {
+                    isUpdating.value = true;
+                    await remoteService.updateStatus(
+                      orderId: order.id,
+                      status: DeliveryStatus.inTransit,
+                    );
+                    isUpdating.value = false;
+                  },
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            icon: const Icon(Icons.cancel_outlined,
+                size: 16, color: AppColors.error),
+            label: const Text(
+              'Cancel Delivery Assignment',
+              style: TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+            onPressed: () {
+              _showDriverCancellationDialog(context, ref, order);
+            },
+          ),
+        ],
       );
     }
 
@@ -668,6 +702,173 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                             'Confirm Handover & Complete Delivery',
                             style: TextStyle(fontSize: 15),
                           ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDriverCancellationDialog(
+      BuildContext context, WidgetRef ref, DeliveryOrder order) {
+    final reasons = [
+      'Customer unreachable / not at pickup address',
+      'Package exceeds vehicle cargo limits',
+      'Vehicle mechanical breakdown',
+      'Severe weather or security risk',
+      'Other emergency',
+    ];
+
+    final selectedReason = ValueNotifier<String>(reasons.first);
+    final isSubmitting = ValueNotifier<bool>(false);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (modalContext) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Cancel Delivery Assignment',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Please select why you cannot fulfill this delivery job:',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              ValueListenableBuilder<String>(
+                valueListenable: selectedReason,
+                builder: (context, current, _) {
+                  return Column(
+                    children: reasons.map((reason) {
+                      final isSelected = current == reason;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => selectedReason.value = reason,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.error.withValues(alpha: 0.08)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.error
+                                  : AppColors.divider,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                size: 18,
+                                color: isSelected
+                                    ? AppColors.error
+                                    : AppColors.textMuted,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  reason,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? AppColors.error
+                                        : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              ValueListenableBuilder<bool>(
+                valueListenable: isSubmitting,
+                builder: (context, loading, _) {
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            isSubmitting.value = true;
+                            final res = await ref
+                                .read(deliveryRemoteServiceProvider)
+                                .cancelOrder(
+                                  orderId: order.id,
+                                  reason: selectedReason.value,
+                                  cancelledByRole: 'driver',
+                                );
+                            isSubmitting.value = false;
+
+                            res.fold(
+                              (f) => ScaffoldMessenger.of(context)
+                                  .showSnackBar(
+                                SnackBar(content: Text(f.message)),
+                              ),
+                              (_) {
+                                Navigator.of(modalContext).pop();
+                                context.pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: AppColors.error,
+                                    content: Text('Job assignment cancelled.'),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                    child: loading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Confirm Cancellation'),
                   );
                 },
               ),
