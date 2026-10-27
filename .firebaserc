@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "e-hailer-e949f",
+    "prod": "e-hailer-e949f"
+  },
+  "targets": {},
+  "etags": {}
+}
