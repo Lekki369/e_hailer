@@ -6,7 +6,9 @@ import '../../../../core/presentation/styles/app_colors.dart';
 
 class OsmMapWidget extends StatefulWidget {
   final MapController? mapController;
-  final LatLng initialCenter;
+
+  /// Initial center coordinates. If omitted, defaults to [pickupLocation] area, or Lagos fallback.
+  final LatLng? initialCenter;
   final double initialZoom;
   final LatLng? pickupLocation;
   final LatLng? dropoffLocation;
@@ -20,6 +22,9 @@ class OsmMapWidget extends StatefulWidget {
   /// Automatically fetch user's GPS coordinates and center/set pickup on initial load
   final bool defaultToCurrentLocation;
 
+  /// Automatically focus and center the map camera on the pickup location area
+  final bool focusOnPickup;
+
   /// Display a floating GPS location button to center map and snap pickup to user
   final bool showMyLocationButton;
 
@@ -32,8 +37,8 @@ class OsmMapWidget extends StatefulWidget {
   const OsmMapWidget({
     super.key,
     this.mapController,
-    this.initialCenter = const LatLng(6.5244, 3.3792), // Default (Lagos)
-    this.initialZoom = 13.0,
+    this.initialCenter,
+    this.initialZoom = 15.0,
     this.pickupLocation,
     this.dropoffLocation,
     this.driverLocation,
@@ -41,6 +46,7 @@ class OsmMapWidget extends StatefulWidget {
     this.onTap,
     this.isPickupMovable = false,
     this.defaultToCurrentLocation = false,
+    this.focusOnPickup = true,
     this.showMyLocationButton = true,
     this.onPickupLocationChanged,
     this.onMyLocationFound,
@@ -58,20 +64,30 @@ class _OsmMapWidgetState extends State<OsmMapWidget> {
   bool _isDraggingPickup = false;
   bool _isLocatingUser = false;
 
+  /// Resolves the effective initial center defaulting to pickup location area
+  LatLng get _effectiveInitialCenter {
+    return widget.initialCenter ??
+        widget.pickupLocation ??
+        _currentPickupLocation ??
+        const LatLng(6.5244, 3.3792);
+  }
+
   @override
   void initState() {
     super.initState();
     _effectiveMapController = widget.mapController ?? MapController();
     _currentPickupLocation = widget.pickupLocation;
 
-    if (widget.defaultToCurrentLocation) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.defaultToCurrentLocation) {
         _determineAndSetCurrentLocation(
           moveCamera: true,
           updatePickup: true,
         );
-      });
-    }
+      } else if (widget.focusOnPickup && widget.pickupLocation != null) {
+        _effectiveMapController.move(widget.pickupLocation!, widget.initialZoom);
+      }
+    });
   }
 
   @override
@@ -79,6 +95,9 @@ class _OsmMapWidgetState extends State<OsmMapWidget> {
     super.didUpdateWidget(oldWidget);
     if (widget.pickupLocation != oldWidget.pickupLocation && !_isDraggingPickup) {
       _currentPickupLocation = widget.pickupLocation;
+      if (widget.focusOnPickup && widget.pickupLocation != null) {
+        _effectiveMapController.move(widget.pickupLocation!, widget.initialZoom);
+      }
     }
   }
 
@@ -153,7 +172,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> {
         FlutterMap(
           mapController: _effectiveMapController,
           options: MapOptions(
-            initialCenter: effectivePickup ?? widget.initialCenter,
+            initialCenter: _effectiveInitialCenter,
             initialZoom: widget.initialZoom,
             onTap: widget.onTap,
             interactionOptions: InteractionOptions(

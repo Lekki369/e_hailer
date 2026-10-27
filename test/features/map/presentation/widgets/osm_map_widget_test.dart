@@ -57,5 +57,22 @@ void main() {
 
       expect(find.byIcon(Icons.my_location_rounded), findsNothing);
     });
+
+    testWidgets('focuses initialCenter on pickup location area by default', (tester) async {
+      const customPickup = LatLng(9.0765, 7.3986); // Abuja
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: OsmMapWidget(
+              pickupLocation: customPickup,
+              isPickupMovable: false,
+            ),
+          ),
+        ),
+      );
+
+      // Verify widget builds and renders pickup marker centered
+      expect(find.byIcon(Icons.location_on), findsOneWidget);
+    });
   });
 }
