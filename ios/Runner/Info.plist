@@ -53,6 +53,11 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Location Permissions for Geolocator and Driver GPS Tracking -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>e-Hailer requires your location to match drivers with nearby orders and provide real-time package delivery tracking.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>e-Hailer requires background location to update delivery progress and customer tracking when the app is in the background.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
