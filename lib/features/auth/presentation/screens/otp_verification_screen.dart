@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pinput/pinput.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../providers/auth_providers.dart';
 
@@ -85,11 +86,9 @@ class OtpVerificationScreen extends HookConsumerWidget {
         (newVerificationId) {
           currentVerificationId.value = newVerificationId;
           pinController.clear();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: AppColors.success,
-              content: Text('A new 6-digit verification code has been dispatched.'),
-            ),
+          AppSnackBar.showSuccess(
+            context,
+            'A new 6-digit verification code has been dispatched.',
           );
         },
       );

@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/delivery_dispute.dart';
 import '../../domain/value_objects/dispute_status.dart';
@@ -333,12 +334,7 @@ class DisputeManagementScreen extends HookConsumerWidget {
                     onTap: () {
                       Clipboard.setData(
                           ClipboardData(text: dispute.trackingNumber));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Waybill copied!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
+                      AppSnackBar.showSuccess(context, 'Waybill copied!');
                     },
                     child: Icon(Icons.copy,
                         size: 14.r, color: AppColors.textSecondary),

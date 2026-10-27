@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:pinput/pinput.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/domain/route_result.dart';
 import '../../../map/infrastructure/osm_routing_service.dart';
@@ -157,19 +158,11 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                                           .broadcastCurrentLocation(order.id);
                                       isSyncingGps.value = false;
                                       res.fold(
-                                        (f) => ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(f.message)),
-                                        ),
-                                        (pos) => ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            backgroundColor:
-                                                AppColors.success,
-                                            content: Text(
-                                                'GPS broadcasted (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})'),
-                                          ),
+                                        (f) => AppSnackBar.showError(
+                                            context, f.message),
+                                        (pos) => AppSnackBar.showSuccess(
+                                          context,
+                                          'GPS broadcasted (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
                                         ),
                                       );
                                     },
@@ -184,21 +177,13 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                                         final res = await broadcastService
                                             .startLiveBroadcast(order.id);
                                         res.fold(
-                                          (f) => ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(f.message)),
-                                          ),
+                                          (f) => AppSnackBar.showError(
+                                              context, f.message),
                                           (_) {
                                             isLiveBroadcasting.value = true;
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                backgroundColor:
-                                                    AppColors.success,
-                                                content: Text(
-                                                    'Live GPS stream started! Position updates sync live.'),
-                                              ),
+                                            AppSnackBar.showSuccess(
+                                              context,
+                                              'Live GPS stream started! Position updates sync live.',
                                             );
                                           },
                                         );
@@ -713,15 +698,11 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                               },
                               (_) {
                                 Navigator.of(modalContext).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: AppColors.success,
-                                    content: Text(
-                                      isCod
-                                          ? 'Handover verified! Cash collected. ₦${platformCommission.toStringAsFixed(0)} commission deducted from digital wallet.'
-                                          : 'Handover verified! ₦${driverEarnings.toStringAsFixed(0)} credited to your digital wallet.',
-                                    ),
-                                  ),
+                                AppSnackBar.showSuccess(
+                                  context,
+                                  isCod
+                                      ? 'Handover verified! Cash collected. ₦${platformCommission.toStringAsFixed(0)} commission deducted from digital wallet.'
+                                      : 'Handover verified! ₦${driverEarnings.toStringAsFixed(0)} credited to your digital wallet.',
                                 );
                               },
                             );
@@ -880,18 +861,13 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                             isSubmitting.value = false;
 
                             res.fold(
-                              (f) => ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                SnackBar(content: Text(f.message)),
-                              ),
+                              (f) => AppSnackBar.showError(context, f.message),
                               (_) {
                                 Navigator.of(modalContext).pop();
                                 context.pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: AppColors.error,
-                                    content: Text('Job assignment cancelled.'),
-                                  ),
+                                AppSnackBar.showError(
+                                  context,
+                                  'Job assignment cancelled.',
                                 );
                               },
                             );

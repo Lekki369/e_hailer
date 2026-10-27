@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/delivery_order.dart';
@@ -93,16 +94,12 @@ class ConsignmentCreationScreen extends HookConsumerWidget {
       if (recipientNameController.text.trim().isEmpty ||
           recipientPhoneController.text.trim().isEmpty ||
           recipientAddressController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill all recipient details.')),
-        );
+        AppSnackBar.showWarning(context, 'Please fill all recipient details.');
         return;
       }
 
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in first.')),
-        );
+        AppSnackBar.showWarning(context, 'Please log in first.');
         return;
       }
 
@@ -147,9 +144,7 @@ class ConsignmentCreationScreen extends HookConsumerWidget {
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          AppSnackBar.showError(context, failure.message);
         },
         (created) {
           context.pushReplacement(OrderTrackingRoute.pathWithId(created.id));

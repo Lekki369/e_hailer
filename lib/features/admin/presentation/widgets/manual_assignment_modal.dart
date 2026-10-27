@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../delivery/domain/entities/delivery_order.dart';
 import '../../domain/entities/fleet_driver_summary.dart';
 import '../providers/admin_providers.dart';
@@ -289,22 +290,13 @@ class _ManualAssignmentModalState extends ConsumerState<ManualAssignmentModal> {
 
                       result.fold(
                         (failure) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(failure.message),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
+                          AppSnackBar.showError(context, failure.message);
                         },
                         (_) {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Order assigned to ${_selectedDriver!.fullName}!',
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
+                          AppSnackBar.showSuccess(
+                            context,
+                            'Order assigned to ${_selectedDriver!.fullName}!',
                           );
                         },
                       );

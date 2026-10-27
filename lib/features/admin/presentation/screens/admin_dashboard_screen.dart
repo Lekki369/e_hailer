@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../delivery/domain/value_objects/delivery_status.dart';
@@ -275,11 +276,9 @@ class AdminDashboardScreen extends HookConsumerWidget {
                         ref.invalidate(allOrdersStreamProvider);
                         ref.invalidate(fleetDriversStreamProvider);
                         ref.invalidate(dispatchMetricsStreamProvider);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Operational feeds refreshed'),
-                            duration: Duration(seconds: 1),
-                          ),
+                        AppSnackBar.showSuccess(
+                          context,
+                          'Operational feeds refreshed',
                         );
                       },
                     ),

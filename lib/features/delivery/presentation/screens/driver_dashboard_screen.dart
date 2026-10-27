@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
@@ -114,23 +115,20 @@ class DriverDashboardScreen extends ConsumerWidget {
                                   );
                               res.fold(
                                 (failure) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(failure.message)),
-                                  );
+                                  AppSnackBar.showError(context, failure.message);
                                 },
                                 (_) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: val
-                                          ? AppColors.success
-                                          : AppColors.textMuted,
-                                      content: Text(
-                                        val
-                                            ? 'You are now ONLINE and broadcasting availability'
-                                            : 'You are now OFFLINE',
-                                      ),
-                                    ),
-                                  );
+                                  if (val) {
+                                    AppSnackBar.showSuccess(
+                                      context,
+                                      'You are now ONLINE and broadcasting availability',
+                                    );
+                                  } else {
+                                    AppSnackBar.showInfo(
+                                      context,
+                                      'You are now OFFLINE',
+                                    );
+                                  }
                                 },
                               );
                             },
@@ -409,9 +407,7 @@ class DriverDashboardScreen extends ConsumerWidget {
 
                                 result.fold(
                                   (failure) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(failure.message)),
-                                    );
+                                    AppSnackBar.showError(context, failure.message);
                                   },
                                   (_) {
                                     context.push(

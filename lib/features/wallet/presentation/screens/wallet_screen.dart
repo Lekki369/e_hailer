@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/wallet_providers.dart';
@@ -423,9 +424,9 @@ class WalletScreen extends HookConsumerWidget {
                                 double.tryParse(amountController.text.trim()) ??
                                     0.0;
                             if (amount <= 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Please enter a valid amount.')),
+                              AppSnackBar.showWarning(
+                                context,
+                                'Please enter a valid amount.',
                               );
                               return;
                             }
@@ -446,18 +447,13 @@ class WalletScreen extends HookConsumerWidget {
 
                             result.fold(
                               (failure) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(failure.message)),
-                                );
+                                AppSnackBar.showError(context, failure.message);
                               },
                               (_) {
                                 Navigator.of(modalContext).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: AppColors.success,
-                                    content: Text(
-                                        'Wallet topped up with ₦${amount.toStringAsFixed(2)}!'),
-                                  ),
+                                AppSnackBar.showSuccess(
+                                  context,
+                                  'Wallet topped up with ₦${amount.toStringAsFixed(2)}!',
                                 );
                               },
                             );

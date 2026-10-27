@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../map/presentation/widgets/osm_map_widget.dart';
 import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
 import '../../domain/entities/delivery_order.dart';
@@ -451,11 +452,9 @@ class PublicTrackingScreen extends HookConsumerWidget {
                             Clipboard.setData(
                               ClipboardData(text: order.trackingNumber),
                             );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Waybill number copied!'),
-                                duration: Duration(seconds: 2),
-                              ),
+                            AppSnackBar.showSuccess(
+                              context,
+                              'Waybill number copied!',
                             );
                           },
                           child: Icon(
@@ -1060,12 +1059,9 @@ class PublicTrackingScreen extends HookConsumerWidget {
   void _copyTrackingLink(BuildContext context, String code) {
     final link = 'https://ehailer.app/track/$code';
     Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.primary,
-        content: Text('Tracking link copied to clipboard: $link'),
-        duration: const Duration(seconds: 3),
-      ),
+    AppSnackBar.showSuccess(
+      context,
+      'Tracking link copied to clipboard: $link',
     );
   }
 
@@ -1134,9 +1130,7 @@ class PublicTrackingScreen extends HookConsumerWidget {
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: phone));
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Phone number copied!')),
-                );
+                AppSnackBar.showSuccess(context, 'Phone number copied!');
               },
               child: const Text('Copy Phone'),
             ),

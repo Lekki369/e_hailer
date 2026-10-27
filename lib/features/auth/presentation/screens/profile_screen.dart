@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../delivery/domain/value_objects/delivery_type.dart';
 import '../../domain/user_entity.dart';
@@ -195,18 +196,11 @@ class ProfileScreen extends HookConsumerWidget {
                                     isSaving.value = false;
 
                                     res.fold(
-                                      (failure) => ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                            content: Text(failure.message)),
-                                      ),
-                                      (_) => ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: AppColors.success,
-                                          content: Text(
-                                              'Personal details updated successfully!'),
-                                        ),
+                                      (failure) => AppSnackBar.showError(
+                                          context, failure.message),
+                                      (_) => AppSnackBar.showSuccess(
+                                        context,
+                                        'Personal details updated successfully!',
                                       ),
                                     );
                                   },
@@ -364,17 +358,11 @@ class ProfileScreen extends HookConsumerWidget {
                                       isSaving.value = false;
 
                                       res.fold(
-                                        (f) => ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(content: Text(f.message)),
-                                        ),
-                                        (_) => ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            backgroundColor: AppColors.success,
-                                            content: Text(
-                                                'Vehicle settings updated successfully!'),
-                                          ),
+                                        (f) => AppSnackBar.showError(
+                                            context, f.message),
+                                        (_) => AppSnackBar.showSuccess(
+                                          context,
+                                          'Vehicle settings updated successfully!',
                                         ),
                                       );
                                     },

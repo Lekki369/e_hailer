@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/presentation/widgets/osm_map_widget.dart';
 import '../../../wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart';
@@ -236,12 +237,9 @@ class OrderTrackingScreen extends HookConsumerWidget {
                                   final link =
                                       'https://ehailer.app/track/${order.trackingNumber}';
                                   Clipboard.setData(ClipboardData(text: link));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: AppColors.primary,
-                                      content: Text(
-                                          'Shareable link copied: $link'),
-                                    ),
+                                  AppSnackBar.showSuccess(
+                                    context,
+                                    'Shareable link copied: $link',
                                   );
                                 },
                               ),
@@ -769,15 +767,12 @@ class OrderTrackingScreen extends HookConsumerWidget {
                             isSubmitting.value = false;
 
                             res.fold(
-                              (f) => ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(content: Text(f.message))),
+                              (f) => AppSnackBar.showError(context, f.message),
                               (_) {
                                 Navigator.of(modalContext).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: AppColors.error,
-                                    content: Text('Order has been cancelled.'),
-                                  ),
+                                AppSnackBar.showError(
+                                  context,
+                                  'Order has been cancelled.',
                                 );
                               },
                             );
@@ -936,16 +931,12 @@ class _RatingSection extends HookConsumerWidget {
                     isSubmitting.value = false;
 
                     res.fold(
-                      (f) => ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(f.message)),
-                      ),
+                      (f) => AppSnackBar.showError(context, f.message),
                       (_) {
                         isSubmitted.value = true;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: AppColors.success,
-                            content: Text('Thank you! Your rating has been recorded.'),
-                          ),
+                        AppSnackBar.showSuccess(
+                          context,
+                          'Thank you! Your rating has been recorded.',
                         );
                       },
                     );

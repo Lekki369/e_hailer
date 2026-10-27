@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../domain/entities/delivery_dispute.dart';
 import '../../domain/entities/delivery_order.dart';
@@ -103,22 +104,13 @@ class _FileDisputeModalState extends ConsumerState<FileDisputeModal> {
 
     result.fold(
       (failure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text(failure.message),
-          ),
-        );
+        AppSnackBar.showError(context, failure.message);
       },
       (ticket) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.success,
-            content: Text(
-              'Dispute submitted successfully! Ticket #${ticket.id.substring(0, 6.clamp(0, ticket.id.length)).toUpperCase()}',
-            ),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          'Dispute submitted successfully! Ticket #${ticket.id.substring(0, 6.clamp(0, ticket.id.length)).toUpperCase()}',
         );
       },
     );

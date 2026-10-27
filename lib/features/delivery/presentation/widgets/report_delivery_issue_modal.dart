@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../domain/entities/delivery_dispute.dart';
@@ -97,22 +98,13 @@ class _ReportDeliveryIssueModalState
 
     result.fold(
       (failure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text(failure.message),
-          ),
-        );
+        AppSnackBar.showError(context, failure.message);
       },
       (_) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: AppColors.warning,
-            content: Text(
-              'Delivery issue logged. Shipment flagged for hub return/review.',
-            ),
-          ),
+        AppSnackBar.showWarning(
+          context,
+          'Delivery issue logged. Shipment flagged for hub return/review.',
         );
         context.go(AppRoutes.driverDashboardPath);
       },

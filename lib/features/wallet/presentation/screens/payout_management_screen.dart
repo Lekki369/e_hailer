@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/payout_request.dart';
 import '../../domain/value_objects/payout_status.dart';
@@ -427,17 +428,10 @@ class _PayoutManagementScreenState
 
               if (mounted) {
                 result.fold(
-                  (failure) => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(failure.message),
-                      backgroundColor: Colors.red,
-                    ),
-                  ),
-                  (_) => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Payout marked as settled successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
+                  (failure) => AppSnackBar.showError(context, failure.message),
+                  (_) => AppSnackBar.showSuccess(
+                    context,
+                    'Payout marked as settled successfully!',
                   ),
                 );
               }
@@ -497,17 +491,10 @@ class _PayoutManagementScreenState
 
               if (mounted) {
                 result.fold(
-                  (failure) => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(failure.message),
-                      backgroundColor: Colors.red,
-                    ),
-                  ),
-                  (_) => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Payout rejected and funds refunded to driver.'),
-                      backgroundColor: Colors.orange,
-                    ),
+                  (failure) => AppSnackBar.showError(context, failure.message),
+                  (_) => AppSnackBar.showWarning(
+                    context,
+                    'Payout rejected and funds refunded to driver.',
                   ),
                 );
               }

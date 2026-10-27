@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/delivery_providers.dart';
@@ -29,12 +30,7 @@ class CustomerHomeScreen extends HookConsumerWidget {
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: AppColors.error,
-              content: Text(failure.message),
-            ),
-          );
+          AppSnackBar.showError(context, failure.message);
         },
         (foundOrder) {
           searchController.clear();

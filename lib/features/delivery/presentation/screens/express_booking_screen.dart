@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/domain/route_result.dart';
@@ -53,9 +54,7 @@ class ExpressBookingScreen extends HookConsumerWidget {
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          AppSnackBar.showError(context, failure.message);
         },
         (route) {
           currentRoute.value = route;
@@ -96,10 +95,9 @@ class ExpressBookingScreen extends HookConsumerWidget {
 
     Future<void> handleBookExpress() async {
       final user = ref.read(currentUserProfileProvider).value;
+      
       if (user == null || pickupPoint.value == null || dropoffPoint.value == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select dropoff point on map.')),
-        );
+        AppSnackBar.showWarning(context, 'Please select dropoff point on map.');
         return;
       }
 
@@ -144,9 +142,7 @@ class ExpressBookingScreen extends HookConsumerWidget {
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          AppSnackBar.showError(context, failure.message);
         },
         (created) {
           context.pushReplacement(OrderTrackingRoute.pathWithId(created.id));

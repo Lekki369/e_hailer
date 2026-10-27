@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../providers/wallet_providers.dart';
 
@@ -306,22 +307,13 @@ class _PayoutRequestModalState extends ConsumerState<PayoutRequestModal> {
                           setState(() => _isSubmitting = false);
                           result.fold(
                             (failure) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(failure.message),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              AppSnackBar.showError(context, failure.message);
                             },
                             (_) {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Payout request of ₦${amount.toStringAsFixed(0)} submitted successfully! Funds will be settled to your bank account.',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
+                              AppSnackBar.showSuccess(
+                                context,
+                                'Payout request of ₦${amount.toStringAsFixed(0)} submitted successfully! Funds will be settled to your bank account.',
                               );
                             },
                           );
