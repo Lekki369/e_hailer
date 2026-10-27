@@ -52,3 +52,7 @@ app.*.map.json
 # Local credentials & secrets backup (never commit)
 .firebase_local/
 
+# DevTools
+devtools_options.yaml
+
+
