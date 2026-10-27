@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/entities/location_point.dart';
@@ -91,15 +93,88 @@ class ConsignmentCreationScreen extends HookConsumerWidget {
     });
 
     Future<void> handleCreateConsignment() async {
-      if (recipientNameController.text.trim().isEmpty ||
-          recipientPhoneController.text.trim().isEmpty ||
-          recipientAddressController.text.trim().isEmpty) {
-        AppSnackBar.showWarning(context, 'Please fill all recipient details.');
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (user == null && firebaseUser == null) {
+        AppSnackBar.showError(
+          context,
+          'You must be signed in to book a consignment. Please log in.',
+          title: 'Sign In Required',
+        );
         return;
       }
 
-      if (user == null) {
-        AppSnackBar.showWarning(context, 'Please log in first.');
+      final activeUser = user ??
+          UserEntity(
+            uid: firebaseUser!.uid,
+            fullName: senderNameController.text.trim().isNotEmpty
+                ? senderNameController.text.trim()
+                : (firebaseUser.displayName ?? 'Sender'),
+            email: firebaseUser.email ?? '',
+            phone: senderPhoneController.text.trim(),
+            role: UserRole.customer,
+            createdAt: DateTime.now(),
+          );
+
+      if (senderNameController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the sender full name.',
+          title: 'Sender Name Required',
+        );
+        return;
+      }
+
+      if (senderPhoneController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the sender contact phone number.',
+          title: 'Sender Phone Required',
+        );
+        return;
+      }
+
+      if (senderAddressController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the sender origin pickup address.',
+          title: 'Pickup Address Required',
+        );
+        return;
+      }
+
+      if (recipientNameController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the recipient full name.',
+          title: 'Recipient Name Required',
+        );
+        return;
+      }
+
+      if (recipientPhoneController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the recipient contact phone number.',
+          title: 'Recipient Phone Required',
+        );
+        return;
+      }
+
+      if (recipientAddressController.text.trim().isEmpty) {
+        AppSnackBar.showWarning(
+          context,
+          'Please enter the recipient delivery address.',
+          title: 'Delivery Address Required',
+        );
+        return;
+      }
+
+      if (parcel.weightKg <= 0) {
+        AppSnackBar.showWarning(
+          context,
+          'Parcel weight must be greater than 0 kg.',
+          title: 'Invalid Weight',
+        );
         return;
       }
 
@@ -113,7 +188,7 @@ class ConsignmentCreationScreen extends HookConsumerWidget {
         type: DeliveryType.consignment,
         vehicleType: VehicleType.van,
         status: DeliveryStatus.created,
-        customerId: user.uid,
+        customerId: activeUser.uid,
         customerName: senderNameController.text.trim(),
         customerPhone: senderPhoneController.text.trim(),
         pickupLocation: LocationPoint(

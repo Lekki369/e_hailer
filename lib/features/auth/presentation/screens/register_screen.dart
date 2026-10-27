@@ -40,8 +40,28 @@ class RegisterScreen extends HookConsumerWidget {
       final password = passwordController.text.trim();
       final confirmPassword = confirmPasswordController.text.trim();
 
-      if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-        errorMessage.value = 'Please fill in all required profile fields.';
+      if (name.isEmpty) {
+        errorMessage.value = 'Please enter your full name.';
+        return;
+      }
+
+      if (email.isEmpty) {
+        errorMessage.value = 'Please enter your email address.';
+        return;
+      }
+
+      if (phone.isEmpty) {
+        errorMessage.value = 'Please enter your contact phone number.';
+        return;
+      }
+
+      if (password.isEmpty) {
+        errorMessage.value = 'Please enter a secure password.';
+        return;
+      }
+
+      if (confirmPassword.isEmpty) {
+        errorMessage.value = 'Please confirm your password.';
         return;
       }
 
@@ -61,10 +81,14 @@ class RegisterScreen extends HookConsumerWidget {
       }
 
       if (isDriver) {
-        if (plateController.text.trim().isEmpty ||
-            modelController.text.trim().isEmpty) {
+        if (plateController.text.trim().isEmpty) {
           errorMessage.value =
-              'Please enter your vehicle plate number and model.';
+              'Please enter your vehicle license plate number.';
+          return;
+        }
+        if (modelController.text.trim().isEmpty) {
+          errorMessage.value =
+              'Please enter your vehicle model (e.g. Honda Ace 125, Toyota Corolla).';
           return;
         }
       }

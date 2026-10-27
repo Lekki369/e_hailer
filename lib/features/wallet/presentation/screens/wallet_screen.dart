@@ -420,13 +420,22 @@ class WalletScreen extends HookConsumerWidget {
                     onPressed: loading
                         ? null
                         : () async {
-                            final amount =
-                                double.tryParse(amountController.text.trim()) ??
-                                    0.0;
+                            final text = amountController.text.trim();
+                            if (text.isEmpty) {
+                              AppSnackBar.showWarning(
+                                context,
+                                'Please enter a top-up amount.',
+                                title: 'Amount Required',
+                              );
+                              return;
+                            }
+
+                            final amount = double.tryParse(text) ?? 0.0;
                             if (amount <= 0) {
                               AppSnackBar.showWarning(
                                 context,
-                                'Please enter a valid amount.',
+                                'Top-up amount must be greater than ₦0.',
+                                title: 'Invalid Amount',
                               );
                               return;
                             }

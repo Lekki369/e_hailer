@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../map/domain/route_result.dart';
 import '../../../map/infrastructure/osm_routing_service.dart';
@@ -32,9 +34,10 @@ class ExpressBookingScreen extends HookConsumerWidget {
 
     // Selected locations & active target for tap interaction
     final activeTarget = useState<ActiveMapTarget>(ActiveMapTarget.dropoff);
-    final pickupPoint = useState<LatLng?>(null);
+    final pickupPoint =
+        useState<LatLng?>(const LatLng(6.5244, 3.3792)); // Lagos center default
     final dropoffPoint = useState<LatLng?>(null);
-    final pickupAddress = useState<String>('Locating your current position...');
+    final pickupAddress = useState<String>('Lagos Island, Lagos');
     final dropoffAddress = useState<String>('Select destination on map');
 
     // Route info
@@ -94,10 +97,64 @@ class ExpressBookingScreen extends HookConsumerWidget {
     );
 
     Future<void> handleBookExpress() async {
-      final user = ref.read(currentUserProfileProvider).value;
-      
-      if (user == null || pickupPoint.value == null || dropoffPoint.value == null) {
-        AppSnackBar.showWarning(context, 'Please select dropoff point on map.');
+      final profile = ref.read(currentUserProfileProvider).value;
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+
+      if (profile == null && firebaseUser == null) {
+        AppSnackBar.showError(
+          context,
+          'You must be signed in to book an express dispatch. Please log in.',
+          title: 'Sign In Required',
+        );
+        return;
+      }
+
+      final user = profile ??
+          UserEntity(
+            uid: firebaseUser!.uid,
+            fullName: firebaseUser.displayName?.isNotEmpty == true
+                ? firebaseUser.displayName!
+                : 'Customer',
+            email: firebaseUser.email ?? '',
+            phone: firebaseUser.phoneNumber ?? '',
+            role: UserRole.customer,
+            createdAt: DateTime.now(),
+          );
+
+      if (pickupPoint.value == null) {
+        AppSnackBar.showWarning(
+          context,
+          'Please select or confirm your pickup location on the map.',
+          title: 'Pickup Location Required',
+        );
+        return;
+      }
+
+      if (dropoffPoint.value == null) {
+        AppSnackBar.showWarning(
+          context,
+          'Please tap anywhere on the map to set your destination/dropoff point.',
+          title: 'Dropoff Location Required',
+        );
+        return;
+      }
+
+      if (pickupPoint.value!.latitude == dropoffPoint.value!.latitude &&
+          pickupPoint.value!.longitude == dropoffPoint.value!.longitude) {
+        AppSnackBar.showWarning(
+          context,
+          'Pickup and dropoff cannot be at the exact same location. Please choose a destination point.',
+          title: 'Invalid Route',
+        );
+        return;
+      }
+
+      if (isLoadingRoute.value) {
+        AppSnackBar.showInfo(
+          context,
+          'Calculating road driving route. Please wait a moment...',
+          title: 'Route In Progress',
+        );
         return;
       }
 

@@ -20,8 +20,12 @@ class LoginScreen extends HookConsumerWidget {
     Future<void> handleLogin() async {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
-      if (email.isEmpty || password.isEmpty) {
-        errorMessage.value = 'Please enter your email and password.';
+      if (email.isEmpty) {
+        errorMessage.value = 'Please enter your email address.';
+        return;
+      }
+      if (password.isEmpty) {
+        errorMessage.value = 'Please enter your password.';
         return;
       }
 

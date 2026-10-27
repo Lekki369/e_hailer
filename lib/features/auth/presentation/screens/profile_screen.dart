@@ -185,13 +185,34 @@ class ProfileScreen extends HookConsumerWidget {
                             onPressed: isSaving.value
                                 ? null
                                 : () async {
+                                    final name = nameController.text.trim();
+                                    final phone = phoneController.text.trim();
+
+                                    if (name.isEmpty) {
+                                      AppSnackBar.showWarning(
+                                        context,
+                                        'Please enter your full name.',
+                                        title: 'Name Required',
+                                      );
+                                      return;
+                                    }
+
+                                    if (phone.isEmpty) {
+                                      AppSnackBar.showWarning(
+                                        context,
+                                        'Please enter your contact phone number.',
+                                        title: 'Phone Required',
+                                      );
+                                      return;
+                                    }
+
                                     isSaving.value = true;
                                     final res = await ref
                                         .read(authRemoteServiceProvider)
                                         .updateUserProfile(
                                           uid: user.uid,
-                                          fullName: nameController.text.trim(),
-                                          phone: phoneController.text.trim(),
+                                          fullName: name,
+                                          phone: phone,
                                         );
                                     isSaving.value = false;
 
@@ -344,16 +365,35 @@ class ProfileScreen extends HookConsumerWidget {
                               onPressed: isSaving.value
                                   ? null
                                   : () async {
+                                      final plate = plateController.text.trim();
+                                      final model = modelController.text.trim();
+
+                                      if (plate.isEmpty) {
+                                        AppSnackBar.showWarning(
+                                          context,
+                                          'Please enter your vehicle license plate number.',
+                                          title: 'Plate Number Required',
+                                        );
+                                        return;
+                                      }
+
+                                      if (model.isEmpty) {
+                                        AppSnackBar.showWarning(
+                                          context,
+                                          'Please enter your vehicle model name.',
+                                          title: 'Vehicle Model Required',
+                                        );
+                                        return;
+                                      }
+
                                       isSaving.value = true;
                                       final res = await ref
                                           .read(authRemoteServiceProvider)
                                           .updateUserProfile(
                                             uid: user.uid,
                                             vehicleType: selectedVehicle.value,
-                                            vehiclePlateNumber:
-                                                plateController.text.trim(),
-                                            vehicleModel:
-                                                modelController.text.trim(),
+                                            vehiclePlateNumber: plate,
+                                            vehicleModel: model,
                                           );
                                       isSaving.value = false;
 
