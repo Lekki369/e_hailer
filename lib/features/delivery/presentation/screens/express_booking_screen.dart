@@ -19,6 +19,8 @@ import '../../domain/value_objects/delivery_status.dart';
 import '../../domain/value_objects/delivery_type.dart';
 import '../providers/delivery_providers.dart';
 
+enum ActiveMapTarget { pickup, dropoff }
+
 class ExpressBookingScreen extends HookConsumerWidget {
   const ExpressBookingScreen({super.key});
 
@@ -27,10 +29,11 @@ class ExpressBookingScreen extends HookConsumerWidget {
     final mapController = useMemoized(() => MapController());
     final routingService = useMemoized(() => OsmRoutingService());
 
-    // Selected locations
-    final pickupPoint = useState<LatLng?>(const LatLng(6.5244, 3.3792)); // Lagos center
+    // Selected locations & active target for tap interaction
+    final activeTarget = useState<ActiveMapTarget>(ActiveMapTarget.dropoff);
+    final pickupPoint = useState<LatLng?>(null);
     final dropoffPoint = useState<LatLng?>(null);
-    final pickupAddress = useState<String>('Lagos Island, Lagos');
+    final pickupAddress = useState<String>('Locating your current position...');
     final dropoffAddress = useState<String>('Select destination on map');
 
     // Route info
@@ -61,18 +64,19 @@ class ExpressBookingScreen extends HookConsumerWidget {
     }
 
     void handleMapTap(TapPosition tapPosition, LatLng point) async {
-      if (dropoffPoint.value == null) {
-        dropoffPoint.value = point;
+      if (activeTarget.value == ActiveMapTarget.pickup) {
+        pickupPoint.value = point;
         final addressRes = await routingService.reverseGeocode(point);
-        dropoffAddress.value = addressRes.getOrElse((_) => 'Selected Dropoff Point');
-        if (pickupPoint.value != null) {
-          await recalculateRoute(pickupPoint.value!, point);
+        pickupAddress.value =
+            addressRes.getOrElse((_) => 'Selected Pickup Point');
+        if (dropoffPoint.value != null) {
+          await recalculateRoute(point, dropoffPoint.value!);
         }
       } else {
-        // Reset and set as new dropoff
         dropoffPoint.value = point;
         final addressRes = await routingService.reverseGeocode(point);
-        dropoffAddress.value = addressRes.getOrElse((_) => 'Selected Dropoff Point');
+        dropoffAddress.value =
+            addressRes.getOrElse((_) => 'Selected Dropoff Point');
         if (pickupPoint.value != null) {
           await recalculateRoute(pickupPoint.value!, point);
         }
@@ -156,47 +160,162 @@ class ExpressBookingScreen extends HookConsumerWidget {
       ),
       body: Stack(
         children: [
-          // 1. Interactive OpenStreetMap
+          // 1. Interactive OpenStreetMap with movable pickup & current location
           OsmMapWidget(
             mapController: mapController,
             pickupLocation: pickupPoint.value,
             dropoffLocation: dropoffPoint.value,
             routePoints: currentRoute.value?.points ?? const [],
+            isPickupMovable: true,
+            defaultToCurrentLocation: true,
+            showMyLocationButton: true,
+            onPickupLocationChanged: (newPoint) async {
+              pickupPoint.value = newPoint;
+              final addressRes = await routingService.reverseGeocode(newPoint);
+              pickupAddress.value =
+                  addressRes.getOrElse((_) => 'Selected Pickup Point');
+              if (dropoffPoint.value != null) {
+                await recalculateRoute(newPoint, dropoffPoint.value!);
+              }
+            },
+            onMyLocationFound: (userPoint) async {
+              pickupPoint.value = userPoint;
+              final addressRes = await routingService.reverseGeocode(userPoint);
+              pickupAddress.value =
+                  addressRes.getOrElse((_) => 'My Current Location');
+              if (dropoffPoint.value != null) {
+                await recalculateRoute(userPoint, dropoffPoint.value!);
+              }
+            },
             onTap: handleMapTap,
           ),
 
-          // 2. Instructions Banner
+          // 2. Interactive Location Selector Banner
           Positioned(
             top: 16,
             left: 16,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.touch_app_rounded, color: AppColors.secondary),
-                  const SizedBox(width: 10),
+                  // Pickup Chip (Active or draggable)
                   Expanded(
-                    child: Text(
-                      dropoffPoint.value == null
-                          ? 'Tap anywhere on the map to set dropoff location'
-                          : 'Dropoff set: ${dropoffAddress.value}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                    child: GestureDetector(
+                      onTap: () =>
+                          activeTarget.value = ActiveMapTarget.pickup,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: activeTarget.value == ActiveMapTarget.pickup
+                              ? AppColors.success.withValues(alpha: 0.15)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: activeTarget.value == ActiveMapTarget.pickup
+                                ? AppColors.success
+                                : Colors.transparent,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.location_on,
+                                    size: 14, color: AppColors.success),
+                                SizedBox(width: 4),
+                                Text(
+                                  'PICKUP (DRAG)',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              pickupAddress.value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Dropoff Chip (Active or tap to place)
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () =>
+                          activeTarget.value = ActiveMapTarget.dropoff,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: activeTarget.value == ActiveMapTarget.dropoff
+                              ? AppColors.error.withValues(alpha: 0.15)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: activeTarget.value == ActiveMapTarget.dropoff
+                                ? AppColors.error
+                                : Colors.transparent,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.flag,
+                                    size: 14, color: AppColors.error),
+                                SizedBox(width: 4),
+                                Text(
+                                  'DROPOFF (TAP)',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              dropoffAddress.value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
