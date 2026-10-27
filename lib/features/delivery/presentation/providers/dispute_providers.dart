@@ -22,9 +22,20 @@ final orderDisputesStreamProvider =
   return service.watchDisputesForOrder(orderId);
 });
 
+/// Notifier for disputes management status filter
+class DisputeStatusFilterNotifier extends Notifier<DisputeStatus?> {
+  @override
+  DisputeStatus? build() => null;
+
+  @override
+  set state(DisputeStatus? value) => super.state = value;
+}
+
 /// Filter state for disputes management
 final disputeStatusFilterProvider =
-    StateProvider<DisputeStatus?>((ref) => null);
+    NotifierProvider<DisputeStatusFilterNotifier, DisputeStatus?>(
+  DisputeStatusFilterNotifier.new,
+);
 
 /// Filtered disputes provider
 final filteredDisputesProvider = Provider<AsyncValue<List<DeliveryDispute>>>((ref) {

@@ -17,9 +17,20 @@ enum AnalyticsTimeRange {
   const AnalyticsTimeRange(this.label);
 }
 
+/// Notifier for selected analytics time range
+class AnalyticsTimeRangeNotifier extends Notifier<AnalyticsTimeRange> {
+  @override
+  AnalyticsTimeRange build() => AnalyticsTimeRange.allTime;
+
+  @override
+  set state(AnalyticsTimeRange value) => super.state = value;
+}
+
 /// Filter provider for selected analytics time range
 final analyticsTimeRangeProvider =
-    StateProvider<AnalyticsTimeRange>((ref) => AnalyticsTimeRange.allTime);
+    NotifierProvider<AnalyticsTimeRangeNotifier, AnalyticsTimeRange>(
+  AnalyticsTimeRangeNotifier.new,
+);
 
 /// Provider synthesizing real-time operational metrics, financial split, and driver performance
 final operationsAnalyticsProvider =
@@ -45,18 +56,16 @@ final operationsAnalyticsProvider =
 
   // 1. Time range filter
   final filteredOrders = orders.where((order) {
-    switch (timeRange) {
-      case AnalyticsTimeRange.today:
-        return order.createdAt.year == now.year &&
-            order.createdAt.month == now.month &&
-            order.createdAt.day == now.day;
-      case AnalyticsTimeRange.thisWeek:
-        return order.createdAt.isAfter(now.subtract(const Duration(days: 7)));
-      case AnalyticsTimeRange.thisMonth:
-        return order.createdAt.isAfter(now.subtract(const Duration(days: 30)));
-      case AnalyticsTimeRange.allTime:
-        return true;
-    }
+    return switch (timeRange) {
+      AnalyticsTimeRange.today => order.createdAt.year == now.year &&
+          order.createdAt.month == now.month &&
+          order.createdAt.day == now.day,
+      AnalyticsTimeRange.thisWeek =>
+        order.createdAt.isAfter(now.subtract(const Duration(days: 7))),
+      AnalyticsTimeRange.thisMonth =>
+        order.createdAt.isAfter(now.subtract(const Duration(days: 30))),
+      AnalyticsTimeRange.allTime => true,
+    };
   }).toList();
 
   final totalOrders = filteredOrders.length;

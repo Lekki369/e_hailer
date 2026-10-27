@@ -49,11 +49,33 @@ final dispatchMetricsStreamProvider = StreamProvider<DispatchMetrics>((ref) {
   });
 });
 
-/// State provider for filtering the dispatch queue by DeliveryStatus (null = all)
-final orderStatusFilterProvider = StateProvider<DeliveryStatus?>((ref) => null);
+/// Notifier for filtering the dispatch queue by DeliveryStatus (null = all)
+class OrderStatusFilterNotifier extends Notifier<DeliveryStatus?> {
+  @override
+  DeliveryStatus? build() => null;
 
-/// State provider for live search query (Waybill tracking number, customer phone, name)
-final orderSearchQueryProvider = StateProvider<String>((ref) => '');
+  @override
+  set state(DeliveryStatus? value) => super.state = value;
+}
+
+final orderStatusFilterProvider =
+    NotifierProvider<OrderStatusFilterNotifier, DeliveryStatus?>(
+  OrderStatusFilterNotifier.new,
+);
+
+/// Notifier for live search query (Waybill tracking number, customer phone, name)
+class OrderSearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  @override
+  set state(String value) => super.state = value;
+}
+
+final orderSearchQueryProvider =
+    NotifierProvider<OrderSearchQueryNotifier, String>(
+  OrderSearchQueryNotifier.new,
+);
 
 /// Computed provider returning filtered orders according to active status filter and search query
 final filteredOrdersProvider = Provider<List<DeliveryOrder>>((ref) {

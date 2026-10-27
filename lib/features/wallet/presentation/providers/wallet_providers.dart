@@ -17,8 +17,20 @@ final userTransactionsStreamProvider =
   return service.watchUserTransactions(userId);
 });
 
-/// State provider for filtering payout requests in admin console (null = all)
-final payoutStatusFilterProvider = StateProvider<PayoutStatus?>((ref) => null);
+/// Notifier for filtering payout requests in admin console (null = all)
+class PayoutStatusFilterNotifier extends Notifier<PayoutStatus?> {
+  @override
+  PayoutStatus? build() => null;
+
+  @override
+  set state(PayoutStatus? value) => super.state = value;
+}
+
+/// Provider for filtering payout requests in admin console (null = all)
+final payoutStatusFilterProvider =
+    NotifierProvider<PayoutStatusFilterNotifier, PayoutStatus?>(
+  PayoutStatusFilterNotifier.new,
+);
 
 /// Stream provider of all platform payout requests (for Operations / Admin)
 final allPayoutRequestsStreamProvider =

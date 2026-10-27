@@ -39,21 +39,19 @@ class NotificationRemoteService {
         ));
       }
 
-      // 2. Retrieve FCM Token
-      String? token;
-      try {
-        token = await _messaging.getToken();
-        if (token != null) {
-          await _saveTokenToFirestore(uid, token);
-        }
-      } catch (e) {
-        debugPrint('FCM getToken note (e.g. APNs on simulator or web): $e');
-      }
-
-      // 3. Listen to token refresh
-      _messaging.onTokenRefresh.listen((newToken) {
-        _saveTokenToFirestore(uid, newToken);
+      // 2. Listen to push notification registration / token updates
+      String? registeredToken;
+      _messaging.onRegistered.listen((token) {
+        registeredToken = token;
+        _saveTokenToFirestore(uid, token);
       });
+
+      // 3. Register device for notifications
+      try {
+        await _messaging.register();
+      } catch (e) {
+        debugPrint('FCM register note (e.g. APNs on simulator or web): $e');
+      }
 
       // 4. Foreground message listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -72,7 +70,7 @@ class NotificationRemoteService {
         }
       });
 
-      return right(token);
+      return right(registeredToken);
     } catch (e) {
       return left(
           ServerFailure(message: 'Failed to initialize notifications: $e'));

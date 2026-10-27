@@ -14,7 +14,8 @@ abstract class AppTheme {
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      textTheme: TextTheme(
         displayLarge: GoogleFonts.plusJakartaSans(
           fontSize: 32,
           fontWeight: FontWeight.bold,
