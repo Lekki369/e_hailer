@@ -1,0 +1,582 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Application: e-Hailer On-Demand Logistics & Consignment Platform
+//
+// Collections and Document Schemas:
+//
+// 1. /users/{userId}
+//    Document ID: Firebase Auth UID (`request.auth.uid`)
+//    Fields:
+//      - uid: string (required, 1..128, immutable)
+//      - role: string (required, 'customer' | 'driver' | 'admin')
+//      - fullName: string (required, 1..100)
+//      - email: string (required, valid email format, 3..120)
+//      - phone: string (required, 3..30)
+//      - avatarUrl: string (optional, 0..500)
+//      - walletBalance: number (required, -10000000..1000000000)
+//      - rating: number (required, 0.0..5.0)
+//      - totalTrips: number (optional, >= 0)
+//      - isAvailable: bool (optional)
+//      - vehicleType: string (optional, 'bike' | 'sedan' | 'van' | 'truck' | '')
+//      - vehiclePlateNumber: string (optional, 0..20)
+//      - vehicleModel: string (optional, 0..50)
+//      - fcmToken: string (optional, 0..500)
+//      - fcmTokenUpdatedAt: string | timestamp (optional)
+//      - currentOrderId: string (optional, 0..128)
+//      - currentLocation: map (optional, lat, lng, address, updatedAt)
+//      - vehicleInfo: map (optional)
+//      - bankDetails: map (optional, bankName, accountNumber, accountName)
+//      - createdAt: string | timestamp (required, immutable)
+//
+// 2. /users/{userId}/transactions/{transactionId}
+//    Document ID: Auto-generated unique transaction ID
+//    Fields:
+//      - userId: string (required, matches parent userId, immutable)
+//      - amount: number (required, > 0)
+//      - type: string (required, 1..40)
+//      - title: string (required, 1..100)
+//      - description: string (optional, 0..500)
+//      - referenceId: string (optional, 0..128)
+//      - reference: string (optional, 0..128)
+//      - status: string (optional, 0..30)
+//      - createdAt: string | timestamp (required, immutable)
+//
+// 3. /deliveries/{deliveryId}
+//    Document ID: Auto-generated delivery order ID
+//    Fields:
+//      - id: string (optional, 0..128)
+//      - trackingNumber: string (required, 1..64, immutable)
+//      - type: string (required, 'express' | 'consignment')
+//      - vehicleType: string (required, 'bike' | 'sedan' | 'van' | 'truck')
+//      - status: string (required, 'created' | 'searchingDriver' | 'assigned' |
+//                'arrivedPickup' | 'pickedUp' | 'inTransit' | 'arrivedDropoff' |
+//                'delivered' | 'failedDelivery' | 'returnedToHub' | 'cancelled' |
+//                'disputed' | 'pending')
+//      - customerId: string (required, 1..128, immutable)
+//      - customerName: string (required, 1..100)
+//      - customerPhone: string (required, 1..30)
+//      - driverId: string | null (optional, 0..128)
+//      - driverName: string | null (optional, 0..100)
+//      - driverPhone: string | null (optional, 0..30)
+//      - driverLatitude: number | null (optional)
+//      - driverLongitude: number | null (optional)
+//      - pickupLocation: map (required, latitude, longitude, address, contactName, contactPhone)
+//      - dropoffLocation: map (required, latitude, longitude, address, contactName, contactPhone)
+//      - parcel: map (required, category, weightKg, quantity, dimensions, isFragile)
+//      - pricing: map (required, baseFare, distanceFare, weightSurcharge, totalFare, currency, paymentMethod, isPaid)
+//      - distanceKm: number (required, >= 0)
+//      - estimatedDurationMinutes: number | null (optional)
+//      - recipientSecurityOtp: string (optional, 1..10, immutable after set)
+//      - cancellationReason: string (optional, 0..500)
+//      - cancelledByRole: string (optional, 'customer' | 'driver' | 'admin')
+//      - customerRating: number (optional, 1.0..5.0)
+//      - customerReview: string (optional, 0..1000)
+//      - isSettled: bool (optional)
+//      - createdAt: string | timestamp (required, immutable)
+//      - scheduledAt, pickedUpAt, deliveredAt, cancelledAt, settledAt: string | timestamp (optional)
+//
+// 4. /payouts/{payoutId}
+//    Document ID: Auto-generated payout request ID
+//    Fields:
+//      - driverId: string (required, matches request.auth.uid, 1..128, immutable)
+//      - driverName: string (required, 1..100)
+//      - driverPhone: string (required, 1..30)
+//      - amount: number (required, > 0, immutable)
+//      - bankName: string (required, 1..100, immutable)
+//      - accountNumber: string (required, 5..30, immutable)
+//      - accountName: string (required, 1..100, immutable)
+//      - status: string (required, 'pending' | 'approved' | 'processed' | 'settled' | 'rejected')
+//      - createdAt: string | timestamp (required, immutable)
+//      - processedAt: string | timestamp (optional)
+//      - processedBy: string (optional, 0..128)
+//      - rejectionReason: string (optional, 0..500)
+//      - transactionRef: string (optional, 0..128)
+//      - adminNote: string (optional, 0..500)
+//
+// 5. /disputes/{disputeId}
+//    Document ID: Auto-generated dispute ticket ID
+//    Fields:
+//      - orderId: string (required, 1..128, immutable)
+//      - trackingNumber: string (required, 1..64, immutable)
+//      - claimantId / raisedByUserId: string (required, matches request.auth.uid, 1..128, immutable)
+//      - claimantName: string (optional, 0..100)
+//      - claimantRole / raisedByRole: string (optional, 'customer' | 'driver' | 'admin')
+//      - claimantPhone: string (optional, 0..30)
+//      - category: string (required, 1..50)
+//      - description: string (required, 1..1000)
+//      - evidenceNotes: string (optional, 0..1000)
+//      - evidenceUrls: list of strings (optional, size <= 10)
+//      - status: string (required, 'open' | 'underReview' | 'resolvedRefund' |
+//                'resolvedReturn' | 'resolved' | 'dismissed' | 'rejected')
+//      - createdAt: string | timestamp (required, immutable)
+//      - resolvedAt: string | timestamp (optional)
+//      - resolvedBy: string (optional, 0..128)
+//      - resolutionNotes / adminResolutionNotes: string (optional, 0..1000)
+//      - refundAmount: number (optional, >= 0)
+//      - returnTrackingNumber: string (optional, 0..64)
+//      - refundIssued: bool (optional)
+//      - targetDriverId: string (optional, 0..128)
+//
+// 6. /wallets/{walletId}/transactions/{transactionId}
+//    Direct subcollection alias for dispute refund ledger entries
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if authenticated user owns the document ID
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if the current user profile exists in Firestore
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // Retrieve the authenticated user's profile document data safely
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check if user is a platform dispatcher or administrator
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.keys().hasAny(['admin']) && request.auth.token.admin == true) ||
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'admin') ||
+        (userExists() && getUserData().get('role', '') == 'admin')
+      );
+    }
+
+    // Check if user is a registered fleet driver / rider
+    function isDriver() {
+      return isAuthenticated() && (
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'driver') ||
+        (userExists() && getUserData().get('role', '') == 'driver')
+      );
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate geographic location map
+    function isValidLocationPoint(loc) {
+      return loc is map &&
+        loc.latitude is number && loc.latitude >= -90.0 && loc.latitude <= 90.0 &&
+        loc.longitude is number && loc.longitude >= -180.0 && loc.longitude <= 180.0 &&
+        loc.address is string && loc.address.size() <= 300 &&
+        loc.contactName is string && loc.contactName.size() <= 100 &&
+        loc.contactPhone is string && loc.contactPhone.size() <= 30 &&
+        (!('landmarkOrNote' in loc) || loc.landmarkOrNote == null || (loc.landmarkOrNote is string && loc.landmarkOrNote.size() <= 300));
+    }
+
+    // Validate parcel details
+    function isValidParcel(parcel) {
+      return parcel is map &&
+        parcel.category is string && parcel.category.size() <= 50 &&
+        parcel.weightKg is number && parcel.weightKg >= 0 && parcel.weightKg <= 10000 &&
+        parcel.quantity is number && parcel.quantity >= 1 && parcel.quantity <= 1000 &&
+        (!('lengthCm' in parcel) || parcel.lengthCm == null || (parcel.lengthCm is number && parcel.lengthCm >= 0)) &&
+        (!('widthCm' in parcel) || parcel.widthCm == null || (parcel.widthCm is number && parcel.widthCm >= 0)) &&
+        (!('heightCm' in parcel) || parcel.heightCm == null || (parcel.heightCm is number && parcel.heightCm >= 0)) &&
+        (!('description' in parcel) || parcel.description == null || (parcel.description is string && parcel.description.size() <= 500)) &&
+        (!('isFragile' in parcel) || parcel.isFragile == null || parcel.isFragile is bool);
+    }
+
+    // Validate delivery fare and pricing structure
+    function isValidPricing(pricing) {
+      return pricing is map &&
+        pricing.baseFare is number && pricing.baseFare >= 0 &&
+        pricing.distanceFare is number && pricing.distanceFare >= 0 &&
+        pricing.weightSurcharge is number && pricing.weightSurcharge >= 0 &&
+        pricing.totalFare is number && pricing.totalFare >= 0 &&
+        pricing.currency is string && pricing.currency.size() <= 10 &&
+        pricing.paymentMethod is string && pricing.paymentMethod.size() <= 30 &&
+        pricing.isPaid is bool &&
+        (!('driverEarnings' in pricing) || pricing.driverEarnings == null || (pricing.driverEarnings is number && pricing.driverEarnings >= 0)) &&
+        (!('platformCommission' in pricing) || pricing.platformCommission == null || (pricing.platformCommission is number && pricing.platformCommission >= 0));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    // Validate user profile schema
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.role is string && (data.role in ['customer', 'driver', 'admin']) &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+        data.email is string && data.email.size() <= 120 && isValidEmail(data.email) &&
+        data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30 &&
+        (!('avatarUrl' in data) || data.avatarUrl == null || (data.avatarUrl is string && data.avatarUrl.size() <= 500)) &&
+        data.walletBalance is number && data.walletBalance >= -10000000 && data.walletBalance <= 1000000000 &&
+        data.rating is number && data.rating >= 0 && data.rating <= 5 &&
+        (!('totalTrips' in data) || data.totalTrips == null || (data.totalTrips is number && data.totalTrips >= 0)) &&
+        (!('isAvailable' in data) || data.isAvailable == null || data.isAvailable is bool) &&
+        (!('vehicleType' in data) || data.vehicleType == null || (data.vehicleType is string && data.vehicleType.size() <= 20)) &&
+        (!('vehiclePlateNumber' in data) || data.vehiclePlateNumber == null || (data.vehiclePlateNumber is string && data.vehiclePlateNumber.size() <= 20)) &&
+        (!('vehicleModel' in data) || data.vehicleModel == null || (data.vehicleModel is string && data.vehicleModel.size() <= 50)) &&
+        (!('fcmToken' in data) || data.fcmToken == null || (data.fcmToken is string && data.fcmToken.size() <= 500)) &&
+        (!('fcmTokenUpdatedAt' in data) || data.fcmTokenUpdatedAt == null || data.fcmTokenUpdatedAt is string || data.fcmTokenUpdatedAt is timestamp) &&
+        (!('currentOrderId' in data) || data.currentOrderId == null || (data.currentOrderId is string && data.currentOrderId.size() <= 128)) &&
+        (!('currentLocation' in data) || data.currentLocation == null || data.currentLocation is map) &&
+        (!('vehicleInfo' in data) || data.vehicleInfo == null || data.vehicleInfo is map) &&
+        (!('bankDetails' in data) || data.bankDetails == null || data.bankDetails is map) &&
+        (data.createdAt is string || data.createdAt is timestamp);
+    }
+
+    // Validate wallet transaction ledger schema
+    function isValidTransaction(data, expectedUserId) {
+      return data.userId == expectedUserId &&
+        data.amount is number && data.amount > 0 && data.amount <= 1000000000 &&
+        data.type is string && data.type.size() >= 1 && data.type.size() <= 40 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 500)) &&
+        (!('referenceId' in data) || data.referenceId == null || (data.referenceId is string && data.referenceId.size() <= 128)) &&
+        (!('reference' in data) || data.reference == null || (data.reference is string && data.reference.size() <= 128)) &&
+        (!('status' in data) || data.status == null || (data.status is string && data.status.size() <= 30)) &&
+        (data.createdAt is string || data.createdAt is timestamp);
+    }
+
+    // Validate delivery order schema
+    function isValidDelivery(data) {
+      return data.trackingNumber is string && data.trackingNumber.size() >= 1 && data.trackingNumber.size() <= 64 &&
+        data.type is string && (data.type in ['express', 'consignment']) &&
+        data.vehicleType is string && (data.vehicleType in ['bike', 'sedan', 'van', 'truck']) &&
+        data.status is string && (data.status in [
+          'created', 'searchingDriver', 'assigned', 'arrivedPickup',
+          'pickedUp', 'inTransit', 'arrivedDropoff', 'delivered',
+          'failedDelivery', 'returnedToHub', 'cancelled', 'disputed', 'pending'
+        ]) &&
+        data.customerId is string && data.customerId.size() >= 1 && data.customerId.size() <= 128 &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 100 &&
+        data.customerPhone is string && data.customerPhone.size() >= 1 && data.customerPhone.size() <= 30 &&
+        (!('id' in data) || data.id == null || (data.id is string && data.id.size() <= 128)) &&
+        (!('driverId' in data) || data.driverId == null || (data.driverId is string && data.driverId.size() <= 128)) &&
+        (!('driverName' in data) || data.driverName == null || (data.driverName is string && data.driverName.size() <= 100)) &&
+        (!('driverPhone' in data) || data.driverPhone == null || (data.driverPhone is string && data.driverPhone.size() <= 30)) &&
+        (!('driverLatitude' in data) || data.driverLatitude == null || data.driverLatitude is number) &&
+        (!('driverLongitude' in data) || data.driverLongitude == null || data.driverLongitude is number) &&
+        isValidLocationPoint(data.pickupLocation) &&
+        isValidLocationPoint(data.dropoffLocation) &&
+        isValidParcel(data.parcel) &&
+        isValidPricing(data.pricing) &&
+        data.distanceKm is number && data.distanceKm >= 0 &&
+        (!('estimatedDurationMinutes' in data) || data.estimatedDurationMinutes == null || data.estimatedDurationMinutes is number) &&
+        (data.createdAt is string || data.createdAt is timestamp) &&
+        (!('scheduledAt' in data) || data.scheduledAt == null || data.scheduledAt is string || data.scheduledAt is timestamp) &&
+        (!('pickedUpAt' in data) || data.pickedUpAt == null || data.pickedUpAt is string || data.pickedUpAt is timestamp) &&
+        (!('deliveredAt' in data) || data.deliveredAt == null || data.deliveredAt is string || data.deliveredAt is timestamp) &&
+        (!('proofOfDeliverySignatureUrl' in data) || data.proofOfDeliverySignatureUrl == null || (data.proofOfDeliverySignatureUrl is string && data.proofOfDeliverySignatureUrl.size() <= 500)) &&
+        (!('proofOfDeliveryPhotoUrl' in data) || data.proofOfDeliveryPhotoUrl == null || (data.proofOfDeliveryPhotoUrl is string && data.proofOfDeliveryPhotoUrl.size() <= 500)) &&
+        (!('cancellationReason' in data) || data.cancellationReason == null || (data.cancellationReason is string && data.cancellationReason.size() <= 500)) &&
+        (!('cancelledByRole' in data) || data.cancelledByRole == null || (data.cancelledByRole is string && data.cancelledByRole.size() <= 30)) &&
+        (!('cancelledAt' in data) || data.cancelledAt == null || data.cancelledAt is string || data.cancelledAt is timestamp) &&
+        (!('customerRating' in data) || data.customerRating == null || (data.customerRating is number && data.customerRating >= 1 && data.customerRating <= 5)) &&
+        (!('customerReview' in data) || data.customerReview == null || (data.customerReview is string && data.customerReview.size() <= 1000)) &&
+        (!('recipientSecurityOtp' in data) || data.recipientSecurityOtp == null || (data.recipientSecurityOtp is string && data.recipientSecurityOtp.size() <= 10)) &&
+        (!('isSettled' in data) || data.isSettled == null || data.isSettled is bool) &&
+        (!('settledAt' in data) || data.settledAt == null || data.settledAt is string || data.settledAt is timestamp) &&
+        (!('resolutionNotes' in data) || data.resolutionNotes == null || (data.resolutionNotes is string && data.resolutionNotes.size() <= 1000)) &&
+        (!('returnTrackingNumber' in data) || data.returnTrackingNumber == null || (data.returnTrackingNumber is string && data.returnTrackingNumber.size() <= 64)) &&
+        (!('reassignmentNote' in data) || data.reassignmentNote == null || (data.reassignmentNote is string && data.reassignmentNote.size() <= 500));
+    }
+
+    // Validate driver payout request schema
+    function isValidPayout(data) {
+      return data.driverId is string && data.driverId.size() >= 1 && data.driverId.size() <= 128 &&
+        data.driverName is string && data.driverName.size() >= 1 && data.driverName.size() <= 100 &&
+        data.driverPhone is string && data.driverPhone.size() >= 1 && data.driverPhone.size() <= 30 &&
+        data.amount is number && data.amount > 0 && data.amount <= 1000000000 &&
+        data.bankName is string && data.bankName.size() >= 1 && data.bankName.size() <= 100 &&
+        data.accountNumber is string && data.accountNumber.size() >= 5 && data.accountNumber.size() <= 30 &&
+        data.accountName is string && data.accountName.size() >= 1 && data.accountName.size() <= 100 &&
+        data.status is string && (data.status in ['pending', 'approved', 'processed', 'settled', 'rejected']) &&
+        (data.createdAt is string || data.createdAt is timestamp) &&
+        (!('id' in data) || data.id == null || (data.id is string && data.id.size() <= 128)) &&
+        (!('processedAt' in data) || data.processedAt == null || data.processedAt is string || data.processedAt is timestamp) &&
+        (!('processedBy' in data) || data.processedBy == null || (data.processedBy is string && data.processedBy.size() <= 128)) &&
+        (!('rejectionReason' in data) || data.rejectionReason == null || (data.rejectionReason is string && data.rejectionReason.size() <= 500)) &&
+        (!('transactionRef' in data) || data.transactionRef == null || (data.transactionRef is string && data.transactionRef.size() <= 128)) &&
+        (!('adminNote' in data) || data.adminNote == null || (data.adminNote is string && data.adminNote.size() <= 500));
+    }
+
+    // Validate delivery dispute schema
+    function isValidDispute(data) {
+      return data.orderId is string && data.orderId.size() >= 1 && data.orderId.size() <= 128 &&
+        data.trackingNumber is string && data.trackingNumber.size() >= 1 && data.trackingNumber.size() <= 64 &&
+        (
+          ('claimantId' in data && data.claimantId is string && data.claimantId.size() <= 128) ||
+          ('raisedByUserId' in data && data.raisedByUserId is string && data.raisedByUserId.size() <= 128)
+        ) &&
+        (!('id' in data) || data.id == null || (data.id is string && data.id.size() <= 128)) &&
+        (!('claimantName' in data) || (data.claimantName is string && data.claimantName.size() <= 100)) &&
+        (!('claimantRole' in data) || (data.claimantRole is string && data.claimantRole in ['customer', 'driver', 'admin'])) &&
+        (!('raisedByRole' in data) || (data.raisedByRole is string && data.raisedByRole in ['customer', 'driver', 'admin'])) &&
+        (!('claimantPhone' in data) || (data.claimantPhone is string && data.claimantPhone.size() <= 30)) &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 50 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 1000 &&
+        (!('evidenceNotes' in data) || data.evidenceNotes == null || (data.evidenceNotes is string && data.evidenceNotes.size() <= 1000)) &&
+        (!('evidenceUrls' in data) || data.evidenceUrls == null || (data.evidenceUrls is list && data.evidenceUrls.size() <= 10)) &&
+        data.status is string && (data.status in [
+          'open', 'underReview', 'resolvedRefund', 'resolvedReturn', 'resolved', 'dismissed', 'rejected'
+        ]) &&
+        (data.createdAt is string || data.createdAt is timestamp) &&
+        (!('resolvedAt' in data) || data.resolvedAt == null || data.resolvedAt is string || data.resolvedAt is timestamp) &&
+        (!('resolvedBy' in data) || data.resolvedBy == null || (data.resolvedBy is string && data.resolvedBy.size() <= 128)) &&
+        (!('resolutionNotes' in data) || data.resolutionNotes == null || (data.resolutionNotes is string && data.resolutionNotes.size() <= 1000)) &&
+        (!('adminResolutionNotes' in data) || data.adminResolutionNotes == null || (data.adminResolutionNotes is string && data.adminResolutionNotes.size() <= 1000)) &&
+        (!('refundAmount' in data) || data.refundAmount == null || (data.refundAmount is number && data.refundAmount >= 0)) &&
+        (!('returnTrackingNumber' in data) || data.returnTrackingNumber == null || (data.returnTrackingNumber is string && data.returnTrackingNumber.size() <= 64)) &&
+        (!('refundIssued' in data) || data.refundIssued == null || data.refundIssued is bool) &&
+        (!('targetDriverId' in data) || data.targetDriverId == null || (data.targetDriverId is string && data.targetDriverId.size() <= 128));
+    }
+
+    // ===============================================================
+    // Root Match Rules
+    // ===============================================================
+
+    // Deny all reads and writes by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Collection: /users/{userId}
+    // ===============================================================
+    match /users/{userId} {
+      // Read:
+      // - The user themself
+      // - Platform Dispatchers / Admins
+      // - Fleet Drivers (to access customer phone and delivery info)
+      // - Customers viewing driver's public profile
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        isDriver() ||
+        resource.data.role == 'driver'
+      );
+
+      // Create:
+      // - Authenticated user creating their own profile
+      // - Prevents privilege escalation: non-admin cannot assign role == 'admin'
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidUser(request.resource.data) &&
+        (request.resource.data.role in ['customer', 'driver'] || isAdmin());
+
+      // Update:
+      // - Platform Admin
+      // - Document owner updating own profile (role cannot be escalated to 'admin', uid/createdAt immutable)
+      // - Customer rating driver after completed trip (only 'rating' field can be modified, between 1.0 and 5.0)
+      allow update: if isAuthenticated() && (
+        (isAdmin() && isValidUser(request.resource.data)) ||
+        (
+          request.auth.uid == userId &&
+          isValidUser(request.resource.data) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+           request.resource.data.role in ['customer', 'driver'])
+        ) ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating']) &&
+          request.resource.data.rating is number &&
+          request.resource.data.rating >= 1.0 &&
+          request.resource.data.rating <= 5.0
+        )
+      );
+
+      // Delete: Admin only
+      allow delete: if isAdmin();
+
+      // Subcollection: /users/{userId}/transactions/{transactionId}
+      match /transactions/{transactionId} {
+        // Read: Document owner or Admin
+        allow read: if isOwner(userId) || isAdmin();
+
+        // Create: Document owner or Admin (for wallet top-up, trip completion settlements, payout locks)
+        allow create: if (isOwner(userId) || isAdmin()) && isValidTransaction(request.resource.data, userId);
+
+        // Update: Admin only (financial ledger entries are immutable to clients)
+        allow update: if isAdmin() &&
+          isValidTransaction(request.resource.data, userId) &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+
+        // Delete: Admin only
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ===============================================================
+    // Collection: /wallets/{walletId}/transactions/{transactionId}
+    // Direct subcollection alias for dispute refund ledger entries
+    // ===============================================================
+    match /wallets/{walletId}/transactions/{transactionId} {
+      allow read: if isOwner(walletId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ===============================================================
+    // Collection: /deliveries/{deliveryId}
+    // ===============================================================
+    match /deliveries/{deliveryId} {
+      // Get: Allow single document retrieval for authenticated participants, admins, or public waybill QR tracking lookup
+      allow get: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.customerId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid ||
+          resource.data.status in ['searchingDriver', 'created', 'pending']
+        )
+      ) || true;
+
+      // List:
+      // - Admins can query all orders
+      // - Customers can query their own orders (where customerId == request.auth.uid)
+      // - Drivers can query their assigned ongoing orders (where driverId == request.auth.uid)
+      // - Drivers can query open unassigned orders (where status in ['searchingDriver', 'created', 'pending'])
+      // - Public tracking query restricted to single-item lookup (limit <= 1)
+      allow list: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.customerId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid ||
+          resource.data.status in ['searchingDriver', 'created', 'pending']
+        )
+      ) || (
+        request.query.limit <= 1 && resource.data.trackingNumber != null
+      );
+
+      // Create: Authenticated customer creating delivery order for themselves, or Admin
+      allow create: if isAuthenticated() &&
+        isValidDelivery(request.resource.data) &&
+        (request.resource.data.customerId == request.auth.uid || isAdmin());
+
+      // Update:
+      // - Admin (manual dispatch, reassigning driver, order cancellation, returns)
+      // - Authenticated order participant:
+      //   - Core identifiers (customerId, trackingNumber, createdAt) are strictly immutable
+      //   - Recipient security PIN (recipientSecurityOtp) cannot be modified after creation
+      //   - Customer: Can cancel or rate their own order
+      //   - Driver: Can accept an open pending order, or assigned driver can update trip status and GPS coords
+      allow update: if isAuthenticated() && isValidDelivery(request.resource.data) && (
+        isAdmin() ||
+        (
+          request.resource.data.customerId == resource.data.customerId &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.trackingNumber == resource.data.trackingNumber &&
+          (!('recipientSecurityOtp' in resource.data) ||
+           resource.data.recipientSecurityOtp == null ||
+           request.resource.data.recipientSecurityOtp == resource.data.recipientSecurityOtp) &&
+          (
+            // Customer updating their own order
+            (resource.data.customerId == request.auth.uid) ||
+
+            // Driver claiming an open unassigned order
+            (
+              (resource.data.status in ['searchingDriver', 'created', 'pending']) &&
+              request.resource.data.driverId == request.auth.uid &&
+              (!('driverId' in resource.data) || resource.data.driverId == null || resource.data.driverId == '')
+            ) ||
+
+            // Assigned driver updating active progress, GPS coords, or completing delivery
+            (
+              resource.data.driverId == request.auth.uid &&
+              request.resource.data.driverId == resource.data.driverId
+            )
+          )
+        )
+      );
+
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // Collection: /payouts/{payoutId}
+    // ===============================================================
+    match /payouts/{payoutId} {
+      // Read: Requesting driver or Admin
+      allow read: if isAuthenticated() && (
+        resource.data.driverId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Create: Authenticated driver submitting withdrawal request for own account, or Admin
+      allow create: if isAuthenticated() &&
+        isValidPayout(request.resource.data) &&
+        (
+          (request.resource.data.driverId == request.auth.uid && request.resource.data.status == 'pending') ||
+          isAdmin()
+        );
+
+      // Update: Admin only (for approving/settling or rejecting payout requests)
+      // Core driver identifiers and withdrawal amount remain strictly immutable
+      allow update: if isAdmin() &&
+        isValidPayout(request.resource.data) &&
+        request.resource.data.driverId == resource.data.driverId &&
+        request.resource.data.amount == resource.data.amount &&
+        request.resource.data.bankName == resource.data.bankName &&
+        request.resource.data.accountNumber == resource.data.accountNumber &&
+        request.resource.data.createdAt == resource.data.createdAt;
+
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // Collection: /disputes/{disputeId}
+    // ===============================================================
+    match /disputes/{disputeId} {
+      // Read: Claimant, participant driver, or Admin
+      allow read: if isAuthenticated() && (
+        resource.data.get('claimantId', '') == request.auth.uid ||
+        resource.data.get('raisedByUserId', '') == request.auth.uid ||
+        resource.data.get('targetDriverId', '') == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Create: Authenticated user filing a claim for their own identity, or Admin
+      allow create: if isAuthenticated() &&
+        isValidDispute(request.resource.data) &&
+        (
+          request.resource.data.get('claimantId', '') == request.auth.uid ||
+          request.resource.data.get('raisedByUserId', '') == request.auth.uid ||
+          isAdmin()
+        );
+
+      // Update:
+      // - Admin (resolving ticket, refunding customer, returning package to hub)
+      // - Claimant updating ticket evidence while still 'open' (cannot modify status or identifiers)
+      allow update: if isAuthenticated() && isValidDispute(request.resource.data) && (
+        isAdmin() ||
+        (
+          (resource.data.get('claimantId', '') == request.auth.uid ||
+           resource.data.get('raisedByUserId', '') == request.auth.uid) &&
+          resource.data.status == 'open' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['description', 'evidenceNotes', 'evidenceUrls'])
+        )
+      );
+
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+  }
+}
