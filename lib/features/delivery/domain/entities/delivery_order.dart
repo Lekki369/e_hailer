@@ -39,6 +39,55 @@ class DeliveryOrder extends Equatable {
   final String? customerReview;
   final String? recipientSecurityOtp;
 
+  /// Whether the order has exceeded SLA dispatch or transit thresholds.
+  bool get isDelayed {
+    if (status == DeliveryStatus.delivered ||
+        status == DeliveryStatus.cancelled ||
+        status == DeliveryStatus.returnedToHub) {
+      return false;
+    }
+    final now = DateTime.now();
+    // 1. Unassigned order pending > 15 minutes
+    if ((status == DeliveryStatus.created ||
+            status == DeliveryStatus.searchingDriver) &&
+        now.difference(createdAt).inMinutes > 15) {
+      return true;
+    }
+    // 2. Active transit exceeding estimated duration + 15 min buffer
+    if ((status == DeliveryStatus.inTransit ||
+            status == DeliveryStatus.pickedUp ||
+            status == DeliveryStatus.assigned) &&
+        estimatedDurationMinutes != null) {
+      final baseTime = pickedUpAt ?? createdAt;
+      final expectedMinutes = estimatedDurationMinutes! + 15;
+      if (now.difference(baseTime).inMinutes > expectedMinutes) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Composite priority score for dispatch queue sorting (higher = more urgent).
+  int get priorityScore {
+    int score = 0;
+    if (isDelayed) score += 1000;
+    if (type == DeliveryType.express) score += 200;
+    if (parcel.isFragile) score += 100;
+    // Add age weight: 10 points for each 5 minutes waiting
+    final ageMinutes = DateTime.now().difference(createdAt).inMinutes;
+    score += (ageMinutes ~/ 5) * 10;
+    return score;
+  }
+
+  /// Extracted primary zone or area from pickup address for regional clustering.
+  String get pickupZone {
+    final parts = pickupLocation.address.split(',');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2].trim();
+    }
+    return pickupLocation.address.split(' ').first;
+  }
+
   const DeliveryOrder({
     required this.id,
     required this.trackingNumber,

@@ -93,17 +93,61 @@ class AdminDashboardScreen extends HookConsumerWidget {
                 ),
                 data: (metrics) => Column(
                   children: [
+                    // Row 1: Active Orders & Revenue Today
                     Row(
                       children: [
                         Expanded(
                           child: _buildMetricTile(
                             context: context,
-                            title: 'Pending Dispatch',
-                            value: '${metrics.pendingAssignment}',
+                            title: 'Active Orders',
+                            value: '${metrics.activeOrders}',
+                            icon: Icons.local_shipping_outlined,
+                            color: Colors.blue.shade700,
+                            bgColor: Colors.blue.shade50,
+                            onTap: () {
+                              ref
+                                  .read(delayedFilterProvider.notifier)
+                                  .state = false;
+                              ref
+                                  .read(orderStatusFilterProvider.notifier)
+                                  .state = null;
+                              context.push(AppRoutes.dispatchQueuePath);
+                            },
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: _buildMetricTile(
+                            context: context,
+                            title: 'Revenue Today',
+                            value:
+                                '₦${metrics.totalRevenueNgn.toStringAsFixed(0)}',
+                            icon: Icons.payments_outlined,
+                            color: Colors.teal.shade700,
+                            bgColor: Colors.teal.shade50,
+                            onTap: () =>
+                                context.push(AppRoutes.analyticsDashboardPath),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+
+                    // Row 2: Unassigned Orders & Assigned Orders
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricTile(
+                            context: context,
+                            title: 'Unassigned',
+                            value: '${metrics.unassignedOrders}',
                             icon: Icons.hourglass_top,
                             color: Colors.orange.shade800,
                             bgColor: Colors.orange.shade50,
                             onTap: () {
+                              ref
+                                  .read(delayedFilterProvider.notifier)
+                                  .state = false;
                               ref
                                   .read(orderStatusFilterProvider.notifier)
                                   .state = DeliveryStatus.searchingDriver;
@@ -115,15 +159,18 @@ class AdminDashboardScreen extends HookConsumerWidget {
                         Expanded(
                           child: _buildMetricTile(
                             context: context,
-                            title: 'In Transit',
-                            value: '${metrics.inTransit}',
-                            icon: Icons.local_shipping,
-                            color: Colors.blue.shade700,
-                            bgColor: Colors.blue.shade50,
+                            title: 'Assigned',
+                            value: '${metrics.assignedOrders}',
+                            icon: Icons.assignment_ind_outlined,
+                            color: Colors.indigo.shade700,
+                            bgColor: Colors.indigo.shade50,
                             onTap: () {
                               ref
+                                  .read(delayedFilterProvider.notifier)
+                                  .state = false;
+                              ref
                                   .read(orderStatusFilterProvider.notifier)
-                                  .state = DeliveryStatus.inTransit;
+                                  .state = DeliveryStatus.assigned;
                               context.push(AppRoutes.dispatchQueuePath);
                             },
                           ),
@@ -131,12 +178,34 @@ class AdminDashboardScreen extends HookConsumerWidget {
                       ],
                     ),
                     SizedBox(height: 12.h),
+
+                    // Row 3: Delayed Orders & Online Drivers
                     Row(
                       children: [
                         Expanded(
                           child: _buildMetricTile(
                             context: context,
-                            title: 'Active Fleet',
+                            title: 'Delayed Orders',
+                            value: '${metrics.delayedOrders}',
+                            icon: Icons.warning_amber_rounded,
+                            color: Colors.red.shade700,
+                            bgColor: Colors.red.shade50,
+                            onTap: () {
+                              ref
+                                  .read(delayedFilterProvider.notifier)
+                                  .state = true;
+                              ref
+                                  .read(orderStatusFilterProvider.notifier)
+                                  .state = null;
+                              context.push(AppRoutes.dispatchQueuePath);
+                            },
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: _buildMetricTile(
+                            context: context,
+                            title: 'Online Drivers',
                             value:
                                 '${metrics.onlineDrivers} / ${metrics.totalDrivers}',
                             icon: Icons.two_wheeler,
@@ -144,23 +213,6 @@ class AdminDashboardScreen extends HookConsumerWidget {
                             bgColor: Colors.green.shade50,
                             onTap: () =>
                                 context.push(AppRoutes.driverManagementPath),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _buildMetricTile(
-                            context: context,
-                            title: 'Delivered',
-                            value: '${metrics.deliveredToday}',
-                            icon: Icons.task_alt,
-                            color: Colors.purple.shade700,
-                            bgColor: Colors.purple.shade50,
-                            onTap: () {
-                              ref
-                                  .read(orderStatusFilterProvider.notifier)
-                                  .state = DeliveryStatus.delivered;
-                              context.push(AppRoutes.dispatchQueuePath);
-                            },
                           ),
                         ),
                       ],

@@ -6,6 +6,8 @@ import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/presentation/widgets/app_snackbar.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../domain/value_objects/payout_status.dart';
+import '../../domain/value_objects/transaction_type.dart';
 import '../providers/wallet_providers.dart';
 import '../widgets/payout_request_modal.dart';
 
@@ -16,11 +18,13 @@ class WalletScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
     final user = userProfileAsync.value;
+    final isDriver = user?.role == UserRole.driver;
     final transactionsAsync = user != null
         ? ref.watch(userTransactionsStreamProvider(user.uid))
         : null;
-
-    final isDriver = user?.role == UserRole.driver;
+    final payoutsAsync = (user != null && isDriver)
+        ? ref.watch(driverPayoutRequestsStreamProvider(user.uid))
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -142,7 +146,215 @@ class WalletScreen extends HookConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
+
+                  // Driver Earnings Summary Cards
+                  if (isDriver && transactionsAsync != null)
+                    transactionsAsync.maybeWhen(
+                      data: (txs) {
+                        double totalEarnings = 0;
+                        double totalCommission = 0;
+                        for (final tx in txs) {
+                          if (tx.type == TransactionType.tripPayout) {
+                            totalEarnings += tx.amount;
+                          } else if (tx.type == TransactionType.codCommission) {
+                            totalCommission += tx.amount;
+                          }
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: Colors.green.shade200,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Net Earnings (80%)',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green.shade900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '₦${totalEarnings.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green.shade900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.indigo.shade50,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: Colors.indigo.shade200,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Platform Commission (20%)',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.indigo.shade900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '₦${totalCommission.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.indigo.shade900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      orElse: () => const SizedBox.shrink(),
+                    ),
+
+                  // Driver Payout Requests Feed
+                  if (payoutsAsync != null)
+                    payoutsAsync.when(
+                      data: (payouts) {
+                        if (payouts.isEmpty) return const SizedBox.shrink();
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Withdrawal & Payout Requests',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(fontSize: 17),
+                                ),
+                                const Icon(
+                                  Icons.account_balance_wallet_outlined,
+                                  color: AppColors.textSecondary,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: payouts.take(3).length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (ctx, idx) {
+                                final p = payouts[idx];
+                                return Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border:
+                                        Border.all(color: AppColors.divider),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '₦${p.amount.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${p.bankName} • ${p.accountNumber}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: p.status ==
+                                                  PayoutStatus.settled
+                                              ? Colors.green.shade100
+                                              : p.status == PayoutStatus.rejected
+                                                  ? Colors.red.shade100
+                                                  : Colors.amber.shade100,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          p.status.label,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: p.status ==
+                                                    PayoutStatus.settled
+                                                ? Colors.green.shade900
+                                                : p.status ==
+                                                        PayoutStatus.rejected
+                                                    ? Colors.red.shade900
+                                                    : Colors.amber.shade900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
 
                   // 2. Transaction History Section
                   Row(

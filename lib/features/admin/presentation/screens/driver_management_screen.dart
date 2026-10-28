@@ -324,23 +324,44 @@ class _DriverManagementScreenState
           ),
           SizedBox(height: 6.h),
 
-          // Assignment indicator
-          Text(
-            driver.currentOrderId != null
-                ? 'Active Job: Order #${driver.currentOrderId!.substring(0, driver.currentOrderId!.length.clamp(0, 8))}'
-                : 'Status: Idle / Ready for dispatch',
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: driver.currentOrderId != null
-                  ? Colors.blue.shade800
-                  : Colors.grey.shade600,
-              fontWeight: driver.currentOrderId != null
-                  ? FontWeight.w600
-                  : FontWeight.normal,
-            ),
+          // Assignment indicator & Last Seen
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                driver.currentOrderId != null
+                    ? 'Active Job: #${driver.currentOrderId!.substring(0, driver.currentOrderId!.length.clamp(0, 8))}'
+                    : 'Status: Idle / Ready for dispatch',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: driver.currentOrderId != null
+                      ? Colors.blue.shade800
+                      : Colors.grey.shade600,
+                  fontWeight: driver.currentOrderId != null
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
+              ),
+              Text(
+                _formatLastSeen(driver.lastActiveAt),
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatLastSeen(DateTime? lastActive) {
+    if (lastActive == null) return 'Last seen: Offline';
+    final diff = DateTime.now().difference(lastActive);
+    if (diff.inMinutes < 2) return 'Active just now';
+    if (diff.inMinutes < 60) return 'Active ${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return 'Active ${diff.inHours}h ago';
+    return 'Active ${diff.inDays}d ago';
   }
 }

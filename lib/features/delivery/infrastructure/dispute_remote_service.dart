@@ -132,18 +132,18 @@ class DisputeRemoteService {
             'walletBalance': FieldValue.increment(refundAmount),
           });
 
-          // 2. Add refund ledger record
+          // 2. Add refund ledger record directly into customer's transaction subcollection
           final txDocRef =
-              _firestore.collection('wallets').doc(customerId).collection('transactions').doc();
+              _usersRef.doc(customerId).collection('transactions').doc();
 
           transaction.set(txDocRef, {
             'userId': customerId,
             'amount': refundAmount,
             'type': TransactionType.refund.name,
             'title': 'Dispute Refund: Order #$orderId',
+            'description': 'Arbitration refund: $resolutionNotes',
+            'referenceId': 'DISPUTE-$disputeId',
             'createdAt': now.toIso8601String(),
-            'reference': 'DISPUTE-$disputeId',
-            'status': 'settled',
           });
         }
 

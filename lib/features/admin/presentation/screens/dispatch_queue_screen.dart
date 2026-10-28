@@ -12,26 +12,68 @@ import '../providers/admin_providers.dart';
 import '../widgets/manual_assignment_modal.dart';
 
 /// Full-featured operational dispatch queue allowing hub operators to filter,
-/// search, inspect, and manually assign drivers to incoming delivery orders.
-class DispatchQueueScreen extends HookConsumerWidget {
+/// sort, search, and perform single or batch driver assignments.
+class DispatchQueueScreen extends StatefulHookConsumerWidget {
   const DispatchQueueScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DispatchQueueScreen> createState() =>
+      _DispatchQueueScreenState();
+}
+
+class _DispatchQueueScreenState extends ConsumerState<DispatchQueueScreen> {
+  bool _isMultiSelect = false;
+  final Set<String> _selectedOrderIds = {};
+
+  @override
+  Widget build(BuildContext context) {
     final filteredOrders = ref.watch(filteredOrdersProvider);
     final allOrdersAsync = ref.watch(allOrdersStreamProvider);
-    final selectedFilter = ref.watch(orderStatusFilterProvider);
+    final selectedStatus = ref.watch(orderStatusFilterProvider);
+    final isDelayedOnly = ref.watch(delayedFilterProvider);
+    final currentSort = ref.watch(queueSortOptionProvider);
+
+    // Compute delayed order count
+    final delayedCount = allOrdersAsync.maybeWhen(
+      data: (orders) => orders.where((o) => o.isDelayed).length,
+      orElse: () => 0,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Live Dispatch Queue',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          _isMultiSelect
+              ? '${_selectedOrderIds.length} Selected'
+              : 'Live Dispatch Queue',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
+          TextButton.icon(
+            icon: Icon(
+              _isMultiSelect ? Icons.close : Icons.checklist_rtl,
+              size: 18.w,
+              color: AppColors.primary,
+            ),
+            label: Text(
+              _isMultiSelect ? 'Cancel' : 'Select',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                _isMultiSelect = !_isMultiSelect;
+                if (!_isMultiSelect) {
+                  _selectedOrderIds.clear();
+                }
+              });
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -42,84 +84,177 @@ class DispatchQueueScreen extends HookConsumerWidget {
       ),
       body: Column(
         children: [
-          // Search & Filter header
+          // Search & Filters Header
           Container(
             color: AppColors.surface,
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
             child: Column(
               children: [
-                // Search Input
-                TextField(
-                  onChanged: (val) {
-                    ref.read(orderSearchQueryProvider.notifier).state = val;
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search Waybill, Customer, or Phone...',
-                    hintStyle: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondary,
+                // Search Input & Sort Menu
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        onChanged: (val) {
+                          ref.read(orderSearchQueryProvider.notifier).state = val;
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search Waybill, Customer, Zone...',
+                          hintStyle: TextStyle(
+                            fontSize: 13.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 14.w,
+                            vertical: 8.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
                     ),
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    filled: true,
-                    fillColor: AppColors.background,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
+                    SizedBox(width: 8.w),
+                    // Sorting dropdown button
+                    PopupMenuButton<QueueSortOption>(
+                      initialValue: currentSort,
+                      icon: Container(
+                        padding: EdgeInsets.all(10.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: const Icon(Icons.sort, color: AppColors.primary),
+                      ),
+                      tooltip: 'Sort Queue',
+                      onSelected: (sort) {
+                        ref.read(queueSortOptionProvider.notifier).state = sort;
+                      },
+                      itemBuilder: (ctx) => [
+                        for (final opt in QueueSortOption.values)
+                          PopupMenuItem(
+                            value: opt,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  opt == currentSort
+                                      ? Icons.check
+                                      : Icons.radio_button_unchecked,
+                                  size: 16.w,
+                                  color: opt == currentSort
+                                      ? AppColors.primary
+                                      : Colors.grey,
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(opt.label),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                  ],
                 ),
                 SizedBox(height: 10.h),
 
-                // Status Filter Chips
+                // Status & Delayed Filter Chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip(
-                        ref: ref,
+                      // All Orders
+                      _buildChip(
                         label: 'All Orders',
-                        status: null,
-                        isSelected: selectedFilter == null,
+                        isSelected: selectedStatus == null && !isDelayedOnly,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              null;
+                        },
                       ),
                       SizedBox(width: 8.w),
-                      _buildFilterChip(
-                        ref: ref,
-                        label: 'Pending',
-                        status: DeliveryStatus.searchingDriver,
-                        isSelected:
-                            selectedFilter == DeliveryStatus.searchingDriver,
+
+                      // Delayed Alert Filter Chip
+                      _buildDelayedChip(
+                        count: delayedCount,
+                        isSelected: isDelayedOnly,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state =
+                              !isDelayedOnly;
+                          if (!isDelayedOnly) {
+                            ref
+                                .read(orderStatusFilterProvider.notifier)
+                                .state = null;
+                          }
+                        },
                       ),
                       SizedBox(width: 8.w),
-                      _buildFilterChip(
-                        ref: ref,
+
+                      // Unassigned / Pending
+                      _buildChip(
+                        label: 'Unassigned',
+                        isSelected: !isDelayedOnly &&
+                            selectedStatus == DeliveryStatus.searchingDriver,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              DeliveryStatus.searchingDriver;
+                        },
+                      ),
+                      SizedBox(width: 8.w),
+
+                      // Assigned
+                      _buildChip(
                         label: 'Assigned',
-                        status: DeliveryStatus.assigned,
-                        isSelected: selectedFilter == DeliveryStatus.assigned,
+                        isSelected: !isDelayedOnly &&
+                            selectedStatus == DeliveryStatus.assigned,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              DeliveryStatus.assigned;
+                        },
                       ),
                       SizedBox(width: 8.w),
-                      _buildFilterChip(
-                        ref: ref,
+
+                      // In Transit
+                      _buildChip(
                         label: 'In Transit',
-                        status: DeliveryStatus.inTransit,
-                        isSelected: selectedFilter == DeliveryStatus.inTransit,
+                        isSelected: !isDelayedOnly &&
+                            selectedStatus == DeliveryStatus.inTransit,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              DeliveryStatus.inTransit;
+                        },
                       ),
                       SizedBox(width: 8.w),
-                      _buildFilterChip(
-                        ref: ref,
+
+                      // Delivered
+                      _buildChip(
                         label: 'Delivered',
-                        status: DeliveryStatus.delivered,
-                        isSelected: selectedFilter == DeliveryStatus.delivered,
+                        isSelected: !isDelayedOnly &&
+                            selectedStatus == DeliveryStatus.delivered,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              DeliveryStatus.delivered;
+                        },
                       ),
                       SizedBox(width: 8.w),
-                      _buildFilterChip(
-                        ref: ref,
+
+                      // Cancelled
+                      _buildChip(
                         label: 'Cancelled',
-                        status: DeliveryStatus.cancelled,
-                        isSelected: selectedFilter == DeliveryStatus.cancelled,
+                        isSelected: !isDelayedOnly &&
+                            selectedStatus == DeliveryStatus.cancelled,
+                        onTap: () {
+                          ref.read(delayedFilterProvider.notifier).state = false;
+                          ref.read(orderStatusFilterProvider.notifier).state =
+                              DeliveryStatus.cancelled;
+                        },
                       ),
                     ],
                   ),
@@ -165,7 +300,7 @@ class DispatchQueueScreen extends HookConsumerWidget {
                   separatorBuilder: (_, __) => SizedBox(height: 12.h),
                   itemBuilder: (ctx, idx) {
                     final order = filteredOrders[idx];
-                    return _buildOrderCard(context, ref, order);
+                    return _buildOrderCard(order);
                   },
                 );
               },
@@ -173,14 +308,82 @@ class DispatchQueueScreen extends HookConsumerWidget {
           ),
         ],
       ),
+      // Persistent Batch Assignment Bar
+      bottomNavigationBar: _isMultiSelect && _selectedOrderIds.isNotEmpty
+          ? Container(
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_selectedOrderIds.length} Orders Selected',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Batch Dispatch Routing',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.send_rounded),
+                      label: const Text('Batch Assign Driver'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      onPressed: () {
+                        final selectedOrders = filteredOrders
+                            .where((o) => _selectedOrderIds.contains(o.id))
+                            .toList();
+                        ManualAssignmentModal.showBatch(
+                          context,
+                          selectedOrders,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
-  Widget _buildFilterChip({
-    required WidgetRef ref,
+  Widget _buildChip({
     required String label,
-    required DeliveryStatus? status,
     required bool isSelected,
+    required VoidCallback onTap,
   }) {
     return ChoiceChip(
       label: Text(label),
@@ -192,25 +395,54 @@ class DispatchQueueScreen extends HookConsumerWidget {
       selected: isSelected,
       selectedColor: AppColors.primary,
       backgroundColor: AppColors.background,
-      onSelected: (_) {
-        ref.read(orderStatusFilterProvider.notifier).state = status;
-      },
+      onSelected: (_) => onTap(),
     );
   }
 
-  Widget _buildOrderCard(
-    BuildContext context,
-    WidgetRef ref,
-    DeliveryOrder order,
-  ) {
+  Widget _buildDelayedChip({
+    required int count,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ChoiceChip(
+      avatar: Icon(
+        Icons.warning_amber_rounded,
+        size: 16.w,
+        color: isSelected ? Colors.white : Colors.red.shade700,
+      ),
+      label: Text('Delayed ($count)'),
+      labelStyle: TextStyle(
+        fontSize: 12.sp,
+        fontWeight: FontWeight.bold,
+        color: isSelected ? Colors.white : Colors.red.shade700,
+      ),
+      selected: isSelected,
+      selectedColor: Colors.red.shade700,
+      backgroundColor: Colors.red.shade50,
+      onSelected: (_) => onTap(),
+    );
+  }
+
+  Widget _buildOrderCard(DeliveryOrder order) {
     final isUnassigned = order.driverId == null &&
         order.status != DeliveryStatus.delivered &&
         order.status != DeliveryStatus.cancelled;
+    final isSelected = _selectedOrderIds.contains(order.id);
+    final waitingMinutes =
+        DateTime.now().difference(order.createdAt).inMinutes;
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primary
+              : order.isDelayed
+                  ? Colors.red.shade300
+                  : Colors.transparent,
+          width: isSelected || order.isDelayed ? 1.5 : 0,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -223,12 +455,27 @@ class DispatchQueueScreen extends HookConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Waybill & Status Badge
+          // Header: Checkbox (in multi-select) / Waybill / Tags
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
+                  if (_isMultiSelect) ...[
+                    Checkbox(
+                      value: isSelected,
+                      activeColor: AppColors.primary,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedOrderIds.add(order.id);
+                          } else {
+                            _selectedOrderIds.remove(order.id);
+                          }
+                        });
+                      },
+                    ),
+                  ],
                   Icon(
                     Icons.qr_code,
                     size: 18.w,
@@ -243,12 +490,57 @@ class DispatchQueueScreen extends HookConsumerWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
+                  SizedBox(width: 8.w),
+                  // Pickup Zone Badge
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      order.pickupZone,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              _buildStatusPill(order.status),
+              Row(
+                children: [
+                  if (order.isDelayed) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        'DELAYED',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade900,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                  ],
+                  _buildStatusPill(order.status),
+                ],
+              ),
             ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
           // Route: Pickup & Dropoff
           Row(
@@ -299,7 +591,7 @@ class DispatchQueueScreen extends HookConsumerWidget {
           const Divider(height: 1),
           SizedBox(height: 10.h),
 
-          // Customer, Driver, Fare & Action
+          // Customer, Driver, Fare & Age
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -317,7 +609,7 @@ class DispatchQueueScreen extends HookConsumerWidget {
                   Text(
                     order.driverName != null
                         ? 'Driver: ${order.driverName}'
-                        : 'Driver: Unassigned',
+                        : 'Driver: Unassigned ($waitingMinutes mins ago)',
                     style: TextStyle(
                       fontSize: 11.sp,
                       fontWeight: isUnassigned

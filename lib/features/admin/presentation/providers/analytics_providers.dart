@@ -77,6 +77,9 @@ final operationsAnalyticsProvider =
   double totalVolume = 0.0;
   int codCount = 0;
   int digitalCount = 0;
+  double totalDeliveryMinutes = 0;
+  int deliveryDurationCount = 0;
+  int onTimeCount = 0;
 
   final Map<VehicleType, int> vehicleMap = {
     VehicleType.bike: 0,
@@ -85,6 +88,8 @@ final operationsAnalyticsProvider =
     VehicleType.truck: 0,
   };
 
+  final Map<String, int> zoneMap = {};
+  final Map<String, int> failureReasonMap = {};
   final Map<String, int> driverTripCounts = {};
   final Map<String, double> driverGrossFares = {};
 
@@ -92,10 +97,23 @@ final operationsAnalyticsProvider =
     // Fulfillment statuses
     if (order.status == DeliveryStatus.delivered) {
       completed++;
+      if (!order.isDelayed) {
+        onTimeCount++;
+      }
+      if (order.deliveredAt != null) {
+        final start = order.pickedUpAt ?? order.createdAt;
+        final duration = order.deliveredAt!.difference(start).inMinutes;
+        if (duration > 0) {
+          totalDeliveryMinutes += duration;
+          deliveryDurationCount++;
+        }
+      }
     } else if (order.status == DeliveryStatus.cancelled ||
         order.status == DeliveryStatus.failedDelivery ||
         order.status == DeliveryStatus.returnedToHub) {
       failedOrCancelled++;
+      final reason = order.cancellationReason ?? 'Unspecified Exception';
+      failureReasonMap[reason] = (failureReasonMap[reason] ?? 0) + 1;
     } else if (order.status == DeliveryStatus.inTransit ||
         order.status == DeliveryStatus.pickedUp ||
         order.status == DeliveryStatus.arrivedDropoff) {
@@ -106,6 +124,10 @@ final operationsAnalyticsProvider =
 
     grossGmv += order.pricing.totalFare;
     totalVolume += order.parcel.billableWeightKg;
+
+    // Zone aggregation
+    final zone = order.pickupZone;
+    zoneMap[zone] = (zoneMap[zone] ?? 0) + 1;
 
     // Payment split
     if (order.pricing.paymentMethod == PaymentMethod.cashOnDelivery) {
@@ -154,6 +176,11 @@ final operationsAnalyticsProvider =
       totalOrders > 0 ? (completed / totalOrders) * 100.0 : 0.0;
   final failureRate =
       totalOrders > 0 ? (failedOrCancelled / totalOrders) * 100.0 : 0.0;
+  final onTimeRate =
+      completed > 0 ? (onTimeCount / completed) * 100.0 : 100.0;
+  final avgDeliveryMins = deliveryDurationCount > 0
+      ? totalDeliveryMinutes / deliveryDurationCount
+      : 0.0;
   final aov = totalOrders > 0 ? grossGmv / totalOrders : 0.0;
 
   final analytics = OperationsAnalytics(
@@ -164,6 +191,8 @@ final operationsAnalyticsProvider =
     pendingOrders: pending,
     completionRate: completionRate,
     failureRate: failureRate,
+    onTimeRate: onTimeRate,
+    averageDeliveryTimeMinutes: avgDeliveryMins,
     grossGmvNgn: grossGmv,
     platformCommissionNgn: grossGmv * 0.20,
     driverPayoutsNgn: grossGmv * 0.80,
@@ -172,6 +201,8 @@ final operationsAnalyticsProvider =
     codOrdersCount: codCount,
     digitalOrdersCount: digitalCount,
     vehicleBreakdown: vehicleMap,
+    zoneBreakdown: zoneMap,
+    failureReasonBreakdown: failureReasonMap,
     driverLeaderboard: leaderboardItems.take(5).toList(),
   );
 

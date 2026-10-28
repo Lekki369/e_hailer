@@ -54,10 +54,25 @@ class AdminRemoteService {
       int inTransit = 0;
       int delivered = 0;
       int cancelled = 0;
+      int assigned = 0;
+      int active = 0;
+      int delayed = 0;
       double revenue = 0.0;
       double volume = 0.0;
 
       for (final order in orders) {
+        final isCompleted = order.status == DeliveryStatus.delivered ||
+            order.status == DeliveryStatus.cancelled;
+        if (!isCompleted) {
+          active++;
+        }
+        if (order.driverId != null && !isCompleted) {
+          assigned++;
+        }
+        if (order.isDelayed) {
+          delayed++;
+        }
+
         if (order.status == DeliveryStatus.created ||
             order.status == DeliveryStatus.searchingDriver) {
           pending++;
@@ -79,6 +94,10 @@ class AdminRemoteService {
 
       return DispatchMetrics(
         totalOrders: orders.length,
+        activeOrders: active,
+        assignedOrders: assigned,
+        unassignedOrders: pending,
+        delayedOrders: delayed,
         pendingAssignment: pending,
         inTransit: inTransit,
         deliveredToday: delivered,
@@ -94,30 +113,44 @@ class AdminRemoteService {
     required String orderId,
     required FleetDriverSummary driver,
   }) async {
+    return batchAssignDriverToOrders(
+      orderIds: [orderId],
+      driver: driver,
+    );
+  }
+
+  /// Batch assign multiple orders to a designated fleet driver.
+  Future<Either<AppFailure, Unit>> batchAssignDriverToOrders({
+    required List<String> orderIds,
+    required FleetDriverSummary driver,
+  }) async {
+    if (orderIds.isEmpty) {
+      return right(unit);
+    }
     try {
       final batch = _firestore.batch();
 
-      // 1. Update order document with driver info and assigned status
-      final orderDocRef = _deliveriesRef.doc(orderId);
-      batch.update(orderDocRef, {
-        'status': DeliveryStatus.assigned.name,
-        'driverId': driver.uid,
-        'driverName': driver.fullName,
-        'driverPhone': driver.phone,
-        'driverLatitude': driver.lastKnownLatitude,
-        'driverLongitude': driver.lastKnownLongitude,
-      });
+      for (final id in orderIds) {
+        final orderDocRef = _deliveriesRef.doc(id);
+        batch.update(orderDocRef, {
+          'status': DeliveryStatus.assigned.name,
+          'driverId': driver.uid,
+          'driverName': driver.fullName,
+          'driverPhone': driver.phone,
+          'driverLatitude': driver.lastKnownLatitude,
+          'driverLongitude': driver.lastKnownLongitude,
+        });
+      }
 
-      // 2. Link current order to driver document
       final driverDocRef = _usersRef.doc(driver.uid);
       batch.update(driverDocRef, {
-        'currentOrderId': orderId,
+        'currentOrderId': orderIds.first,
       });
 
       await batch.commit();
       return right(unit);
     } catch (e) {
-      return left(ServerFailure(message: 'Failed to assign driver: $e'));
+      return left(ServerFailure(message: 'Failed to batch assign orders: $e'));
     }
   }
 

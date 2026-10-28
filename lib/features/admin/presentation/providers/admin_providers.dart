@@ -77,15 +77,59 @@ final orderSearchQueryProvider =
   OrderSearchQueryNotifier.new,
 );
 
-/// Computed provider returning filtered orders according to active status filter and search query
+/// Sort options for the dispatch queue
+enum QueueSortOption {
+  priority('Priority & Urgency'),
+  newest('Newest First'),
+  oldest('Oldest First'),
+  zone('Pickup Zone');
+
+  final String label;
+  const QueueSortOption(this.label);
+}
+
+class QueueSortOptionNotifier extends Notifier<QueueSortOption> {
+  @override
+  QueueSortOption build() => QueueSortOption.priority;
+
+  @override
+  set state(QueueSortOption value) => super.state = value;
+}
+
+final queueSortOptionProvider =
+    NotifierProvider<QueueSortOptionNotifier, QueueSortOption>(
+  QueueSortOptionNotifier.new,
+);
+
+class DelayedFilterNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  @override
+  set state(bool value) => super.state = value;
+}
+
+final delayedFilterProvider =
+    NotifierProvider<DelayedFilterNotifier, bool>(
+  DelayedFilterNotifier.new,
+);
+
+/// Computed provider returning filtered orders according to active status filter, delayed filter, and search query
 final filteredOrdersProvider = Provider<List<DeliveryOrder>>((ref) {
   final ordersAsync = ref.watch(allOrdersStreamProvider);
   final statusFilter = ref.watch(orderStatusFilterProvider);
+  final delayedOnly = ref.watch(delayedFilterProvider);
+  final sortOption = ref.watch(queueSortOptionProvider);
   final query = ref.watch(orderSearchQueryProvider).trim().toLowerCase();
 
   return ordersAsync.maybeWhen(
     data: (orders) {
-      return orders.where((order) {
+      final list = orders.where((order) {
+        // Delayed only filter
+        if (delayedOnly && !order.isDelayed) {
+          return false;
+        }
+
         // Status matching
         if (statusFilter != null && order.status != statusFilter) {
           return false;
@@ -115,6 +159,24 @@ final filteredOrdersProvider = Provider<List<DeliveryOrder>>((ref) {
 
         return true;
       }).toList();
+
+      // Apply sorting
+      switch (sortOption) {
+        case QueueSortOption.priority:
+          list.sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
+          break;
+        case QueueSortOption.newest:
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          break;
+        case QueueSortOption.oldest:
+          list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          break;
+        case QueueSortOption.zone:
+          list.sort((a, b) => a.pickupZone.compareTo(b.pickupZone));
+          break;
+      }
+
+      return list;
     },
     orElse: () => [],
   );

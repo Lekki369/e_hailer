@@ -3,7 +3,11 @@ import 'package:equatable/equatable.dart';
 /// Aggregated real-time metrics for the admin dispatcher dashboard.
 class DispatchMetrics extends Equatable {
   final int totalOrders;
-  final int pendingAssignment;
+  final int activeOrders;
+  final int assignedOrders;
+  final int unassignedOrders;
+  final int delayedOrders;
+  final int pendingAssignment; // Backwards-compatible alias for unassignedOrders
   final int inTransit;
   final int deliveredToday;
   final int cancelled;
@@ -14,6 +18,10 @@ class DispatchMetrics extends Equatable {
 
   const DispatchMetrics({
     this.totalOrders = 0,
+    this.activeOrders = 0,
+    this.assignedOrders = 0,
+    this.unassignedOrders = 0,
+    this.delayedOrders = 0,
     this.pendingAssignment = 0,
     this.inTransit = 0,
     this.deliveredToday = 0,
@@ -26,6 +34,10 @@ class DispatchMetrics extends Equatable {
 
   DispatchMetrics copyWith({
     int? totalOrders,
+    int? activeOrders,
+    int? assignedOrders,
+    int? unassignedOrders,
+    int? delayedOrders,
     int? pendingAssignment,
     int? inTransit,
     int? deliveredToday,
@@ -37,7 +49,11 @@ class DispatchMetrics extends Equatable {
   }) {
     return DispatchMetrics(
       totalOrders: totalOrders ?? this.totalOrders,
-      pendingAssignment: pendingAssignment ?? this.pendingAssignment,
+      activeOrders: activeOrders ?? this.activeOrders,
+      assignedOrders: assignedOrders ?? this.assignedOrders,
+      unassignedOrders: unassignedOrders ?? this.unassignedOrders,
+      delayedOrders: delayedOrders ?? this.delayedOrders,
+      pendingAssignment: pendingAssignment ?? unassignedOrders ?? this.pendingAssignment,
       inTransit: inTransit ?? this.inTransit,
       deliveredToday: deliveredToday ?? this.deliveredToday,
       cancelled: cancelled ?? this.cancelled,
@@ -51,6 +67,10 @@ class DispatchMetrics extends Equatable {
   @override
   List<Object?> get props => [
         totalOrders,
+        activeOrders,
+        assignedOrders,
+        unassignedOrders,
+        delayedOrders,
         pendingAssignment,
         inTransit,
         deliveredToday,

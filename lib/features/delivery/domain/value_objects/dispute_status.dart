@@ -15,8 +15,16 @@ enum DisputeStatus {
   bool get isResolved => !isPending;
 
   static DisputeStatus fromString(String? value) {
+    if (value == null) return DisputeStatus.open;
+    final normalized = value.toLowerCase().replaceAll('_', '');
+    if (normalized == 'inreview' || normalized == 'underinvestigation') {
+      return DisputeStatus.underInvestigation;
+    }
+    if (normalized == 'resolved') {
+      return DisputeStatus.resolvedRefund;
+    }
     return DisputeStatus.values.firstWhere(
-      (e) => e.name.toLowerCase() == (value ?? '').toLowerCase(),
+      (e) => e.name.toLowerCase() == normalized,
       orElse: () => DisputeStatus.open,
     );
   }

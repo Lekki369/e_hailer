@@ -43,6 +43,8 @@ class OperationsAnalytics extends Equatable {
   final int pendingOrders;
   final double completionRate; // 0.0 to 100.0%
   final double failureRate; // 0.0 to 100.0%
+  final double onTimeRate; // 0.0 to 100.0%
+  final double averageDeliveryTimeMinutes;
   final double grossGmvNgn; // Total Gross Merchandise Volume
   final double platformCommissionNgn; // 20% platform revenue cut
   final double driverPayoutsNgn; // 80% driver net earnings
@@ -51,6 +53,8 @@ class OperationsAnalytics extends Equatable {
   final int codOrdersCount;
   final int digitalOrdersCount;
   final Map<VehicleType, int> vehicleBreakdown;
+  final Map<String, int> zoneBreakdown;
+  final Map<String, int> failureReasonBreakdown;
   final List<DriverPerformanceLeaderboardItem> driverLeaderboard;
 
   const OperationsAnalytics({
@@ -61,6 +65,8 @@ class OperationsAnalytics extends Equatable {
     this.pendingOrders = 0,
     this.completionRate = 0.0,
     this.failureRate = 0.0,
+    this.onTimeRate = 100.0,
+    this.averageDeliveryTimeMinutes = 0.0,
     this.grossGmvNgn = 0.0,
     this.platformCommissionNgn = 0.0,
     this.driverPayoutsNgn = 0.0,
@@ -69,6 +75,8 @@ class OperationsAnalytics extends Equatable {
     this.codOrdersCount = 0,
     this.digitalOrdersCount = 0,
     this.vehicleBreakdown = const {},
+    this.zoneBreakdown = const {},
+    this.failureReasonBreakdown = const {},
     this.driverLeaderboard = const [],
   });
 
@@ -81,6 +89,8 @@ class OperationsAnalytics extends Equatable {
         pendingOrders,
         completionRate,
         failureRate,
+        onTimeRate,
+        averageDeliveryTimeMinutes,
         grossGmvNgn,
         platformCommissionNgn,
         driverPayoutsNgn,
@@ -89,6 +99,8 @@ class OperationsAnalytics extends Equatable {
         codOrdersCount,
         digitalOrdersCount,
         vehicleBreakdown,
+        zoneBreakdown,
+        failureReasonBreakdown,
         driverLeaderboard,
       ];
 }
