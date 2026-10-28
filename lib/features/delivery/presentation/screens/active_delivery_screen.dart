@@ -400,6 +400,9 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                     await remoteService.updateStatus(
                       orderId: order.id,
                       status: DeliveryStatus.arrivedPickup,
+                      actorId: driverId,
+                      actorRole: 'driver',
+                      note: 'Courier arrived at pickup location',
                     );
                     isUpdating.value = false;
                   },
@@ -438,6 +441,9 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                     await remoteService.updateStatus(
                       orderId: order.id,
                       status: DeliveryStatus.inTransit,
+                      actorId: driverId,
+                      actorRole: 'driver',
+                      note: 'Package collected. En route to recipient destination.',
                     );
                     isUpdating.value = false;
                   },
@@ -474,6 +480,9 @@ class ActiveDeliveryScreen extends HookConsumerWidget {
                 await remoteService.updateStatus(
                   orderId: order.id,
                   status: DeliveryStatus.arrivedDropoff,
+                  actorId: driverId,
+                  actorRole: 'driver',
+                  note: 'Courier arrived at destination for recipient handover.',
                 );
                 isUpdating.value = false;
               },

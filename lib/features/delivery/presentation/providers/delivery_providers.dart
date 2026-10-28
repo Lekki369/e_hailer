@@ -2,6 +2,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/domain/failures/app_failure.dart';
 import '../../../../core/presentation/utils/fp_framework.dart';
 import '../../domain/entities/delivery_order.dart';
+import '../../domain/entities/delivery_timeline_event.dart';
 import '../../infrastructure/delivery_remote_service.dart';
 
 /// Provider for Delivery Remote Service
@@ -44,4 +45,12 @@ final publicOrderTrackingStreamProvider =
         (ref, trackingNumber) {
   final service = ref.watch(deliveryRemoteServiceProvider);
   return service.watchOrderByTrackingNumber(trackingNumber);
+});
+
+/// Stream provider for immutable order timeline events
+final orderTimelineStreamProvider =
+    StreamProvider.family<List<DeliveryTimelineEvent>, String>(
+        (ref, orderId) {
+  final service = ref.watch(deliveryRemoteServiceProvider);
+  return service.watchOrderTimeline(orderId);
 });

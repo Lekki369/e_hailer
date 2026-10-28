@@ -4,10 +4,17 @@ import '../../delivery/domain/value_objects/delivery_type.dart';
 enum UserRole {
   customer('Customer'),
   driver('Rider / Driver'),
-  admin('Hub Dispatcher / Admin');
+  admin('Hub Dispatcher / Admin'),
+  support('Support & Dispute Officer');
 
   final String label;
   const UserRole(this.label);
+
+  bool get isCustomer => this == UserRole.customer;
+  bool get isDriver => this == UserRole.driver;
+  bool get isAdmin => this == UserRole.admin;
+  bool get isSupport => this == UserRole.support;
+  bool get isStaff => this == UserRole.admin || this == UserRole.support;
 
   static UserRole fromString(String? value) {
     return UserRole.values.firstWhere(

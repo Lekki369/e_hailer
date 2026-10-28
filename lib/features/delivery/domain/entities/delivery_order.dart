@@ -28,7 +28,11 @@ class DeliveryOrder extends Equatable {
   final int? estimatedDurationMinutes;
   final DateTime createdAt;
   final DateTime? scheduledAt;
+  final DateTime? assignedAt;
+  final DateTime? arrivedPickupAt;
   final DateTime? pickedUpAt;
+  final DateTime? inTransitAt;
+  final DateTime? arrivedDropoffAt;
   final DateTime? deliveredAt;
   final String? proofOfDeliverySignatureUrl;
   final String? proofOfDeliveryPhotoUrl;
@@ -110,7 +114,11 @@ class DeliveryOrder extends Equatable {
     this.estimatedDurationMinutes,
     required this.createdAt,
     this.scheduledAt,
+    this.assignedAt,
+    this.arrivedPickupAt,
     this.pickedUpAt,
+    this.inTransitAt,
+    this.arrivedDropoffAt,
     this.deliveredAt,
     this.proofOfDeliverySignatureUrl,
     this.proofOfDeliveryPhotoUrl,
@@ -144,7 +152,11 @@ class DeliveryOrder extends Equatable {
     int? estimatedDurationMinutes,
     DateTime? createdAt,
     DateTime? scheduledAt,
+    DateTime? assignedAt,
+    DateTime? arrivedPickupAt,
     DateTime? pickedUpAt,
+    DateTime? inTransitAt,
+    DateTime? arrivedDropoffAt,
     DateTime? deliveredAt,
     String? proofOfDeliverySignatureUrl,
     String? proofOfDeliveryPhotoUrl,
@@ -178,7 +190,11 @@ class DeliveryOrder extends Equatable {
           estimatedDurationMinutes ?? this.estimatedDurationMinutes,
       createdAt: createdAt ?? this.createdAt,
       scheduledAt: scheduledAt ?? this.scheduledAt,
+      assignedAt: assignedAt ?? this.assignedAt,
+      arrivedPickupAt: arrivedPickupAt ?? this.arrivedPickupAt,
       pickedUpAt: pickedUpAt ?? this.pickedUpAt,
+      inTransitAt: inTransitAt ?? this.inTransitAt,
+      arrivedDropoffAt: arrivedDropoffAt ?? this.arrivedDropoffAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       proofOfDeliverySignatureUrl:
           proofOfDeliverySignatureUrl ?? this.proofOfDeliverySignatureUrl,
@@ -216,7 +232,11 @@ class DeliveryOrder extends Equatable {
       'estimatedDurationMinutes': estimatedDurationMinutes,
       'createdAt': createdAt.toIso8601String(),
       'scheduledAt': scheduledAt?.toIso8601String(),
+      'assignedAt': assignedAt?.toIso8601String(),
+      'arrivedPickupAt': arrivedPickupAt?.toIso8601String(),
       'pickedUpAt': pickedUpAt?.toIso8601String(),
+      'inTransitAt': inTransitAt?.toIso8601String(),
+      'arrivedDropoffAt': arrivedDropoffAt?.toIso8601String(),
       'deliveredAt': deliveredAt?.toIso8601String(),
       'proofOfDeliverySignatureUrl': proofOfDeliverySignatureUrl,
       'proofOfDeliveryPhotoUrl': proofOfDeliveryPhotoUrl,
@@ -274,8 +294,20 @@ class DeliveryOrder extends Equatable {
       scheduledAt: map['scheduledAt'] != null
           ? DateTime.tryParse(map['scheduledAt'].toString())
           : null,
+      assignedAt: map['assignedAt'] != null
+          ? DateTime.tryParse(map['assignedAt'].toString())
+          : null,
+      arrivedPickupAt: map['arrivedPickupAt'] != null
+          ? DateTime.tryParse(map['arrivedPickupAt'].toString())
+          : null,
       pickedUpAt: map['pickedUpAt'] != null
           ? DateTime.tryParse(map['pickedUpAt'].toString())
+          : null,
+      inTransitAt: map['inTransitAt'] != null
+          ? DateTime.tryParse(map['inTransitAt'].toString())
+          : null,
+      arrivedDropoffAt: map['arrivedDropoffAt'] != null
+          ? DateTime.tryParse(map['arrivedDropoffAt'].toString())
           : null,
       deliveredAt: map['deliveredAt'] != null
           ? DateTime.tryParse(map['deliveredAt'].toString())
@@ -308,6 +340,12 @@ class DeliveryOrder extends Equatable {
         distanceKm,
         pricing,
         createdAt,
+        assignedAt,
+        arrivedPickupAt,
+        pickedUpAt,
+        inTransitAt,
+        arrivedDropoffAt,
+        deliveredAt,
         cancellationReason,
         customerRating,
         customerReview,

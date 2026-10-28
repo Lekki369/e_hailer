@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/domain/failures/app_failure.dart';
 import '../../../../core/presentation/utils/fp_framework.dart';
 import '../../delivery/domain/entities/delivery_order.dart';
+import '../../delivery/domain/entities/delivery_timeline_event.dart';
 import '../../delivery/domain/value_objects/delivery_status.dart';
 import '../domain/entities/dispatch_metrics.dart';
 import '../domain/entities/fleet_driver_summary.dart';
@@ -128,6 +129,7 @@ class AdminRemoteService {
       return right(unit);
     }
     try {
+      final now = DateTime.now();
       final batch = _firestore.batch();
 
       for (final id in orderIds) {
@@ -139,7 +141,23 @@ class AdminRemoteService {
           'driverPhone': driver.phone,
           'driverLatitude': driver.lastKnownLatitude,
           'driverLongitude': driver.lastKnownLongitude,
+          'assignedAt': now.toIso8601String(),
         });
+
+        final timelineRef = orderDocRef.collection('timeline').doc();
+        final event = DeliveryTimelineEvent(
+          id: timelineRef.id,
+          orderId: id,
+          status: DeliveryStatus.assigned,
+          actorId: 'admin_dispatch',
+          actorRole: 'admin',
+          timestamp: now,
+          note:
+              'Manually assigned to driver ${driver.fullName} by Hub Dispatch',
+          latitude: driver.lastKnownLatitude,
+          longitude: driver.lastKnownLongitude,
+        );
+        batch.set(timelineRef, event.toMap());
       }
 
       final driverDocRef = _usersRef.doc(driver.uid);
@@ -161,6 +179,7 @@ class AdminRemoteService {
     String? reason,
   }) async {
     try {
+      final now = DateTime.now();
       final batch = _firestore.batch();
 
       final orderDocRef = _deliveriesRef.doc(orderId);
@@ -171,11 +190,28 @@ class AdminRemoteService {
         'driverPhone': newDriver.phone,
         'driverLatitude': newDriver.lastKnownLatitude,
         'driverLongitude': newDriver.lastKnownLongitude,
+        'assignedAt': now.toIso8601String(),
       };
       if (reason != null && reason.trim().isNotEmpty) {
         updateData['reassignmentNote'] = reason.trim();
       }
       batch.update(orderDocRef, updateData);
+
+      final timelineRef = orderDocRef.collection('timeline').doc();
+      final event = DeliveryTimelineEvent(
+        id: timelineRef.id,
+        orderId: orderId,
+        status: DeliveryStatus.assigned,
+        actorId: 'admin_dispatch',
+        actorRole: 'admin',
+        timestamp: now,
+        note: reason != null && reason.trim().isNotEmpty
+            ? 'Reassigned to driver ${newDriver.fullName}. Reason: ${reason.trim()}'
+            : 'Reassigned to driver ${newDriver.fullName} by Hub Dispatch',
+        latitude: newDriver.lastKnownLatitude,
+        longitude: newDriver.lastKnownLongitude,
+      );
+      batch.set(timelineRef, event.toMap());
 
       final driverDocRef = _usersRef.doc(newDriver.uid);
       batch.update(driverDocRef, {
@@ -195,12 +231,29 @@ class AdminRemoteService {
     required String reason,
   }) async {
     try {
-      await _deliveriesRef.doc(orderId).update({
+      final now = DateTime.now();
+      final batch = _firestore.batch();
+      batch.update(_deliveriesRef.doc(orderId), {
         'status': DeliveryStatus.cancelled.name,
         'cancellationReason': reason.trim(),
         'cancelledByRole': 'admin',
-        'cancelledAt': DateTime.now().toIso8601String(),
+        'cancelledAt': now.toIso8601String(),
       });
+
+      final timelineRef =
+          _deliveriesRef.doc(orderId).collection('timeline').doc();
+      final event = DeliveryTimelineEvent(
+        id: timelineRef.id,
+        orderId: orderId,
+        status: DeliveryStatus.cancelled,
+        actorId: 'admin_dispatch',
+        actorRole: 'admin',
+        timestamp: now,
+        note: 'Cancelled by Hub Dispatch: ${reason.trim()}',
+      );
+      batch.set(timelineRef, event.toMap());
+
+      await batch.commit();
       return right(unit);
     } catch (e) {
       return left(ServerFailure(message: 'Failed to cancel order: $e'));

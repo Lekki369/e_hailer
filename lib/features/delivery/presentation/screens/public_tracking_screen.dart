@@ -860,15 +860,19 @@ class PublicTrackingScreen extends HookConsumerWidget {
       ),
       _TimelineStep(
         title: 'Courier Assigned',
-        subtitle: order.driverName != null
-            ? '${order.driverName} dispatched'
-            : 'Matching nearby fleet rider',
+        subtitle: order.assignedAt != null
+            ? 'Dispatched ${DateFormat('MMM d, h:mm a').format(order.assignedAt!)}'
+            : (order.driverName != null
+                ? '${order.driverName} dispatched'
+                : 'Matching nearby fleet rider'),
         isCompleted: status != DeliveryStatus.searchingDriver && !isCancelled,
         isActive: status == DeliveryStatus.assigned,
       ),
       _TimelineStep(
         title: 'Package Picked Up',
-        subtitle: 'Courier received consignment from sender',
+        subtitle: order.pickedUpAt != null
+            ? 'Picked up ${DateFormat('MMM d, h:mm a').format(order.pickedUpAt!)}'
+            : 'Courier received consignment from sender',
         isCompleted: status == DeliveryStatus.pickedUp ||
             status == DeliveryStatus.inTransit ||
             status == DeliveryStatus.arrivedDropoff ||
@@ -877,14 +881,18 @@ class PublicTrackingScreen extends HookConsumerWidget {
       ),
       _TimelineStep(
         title: 'In Transit',
-        subtitle: 'En route to recipient destination',
+        subtitle: order.inTransitAt != null
+            ? 'En route since ${DateFormat('MMM d, h:mm a').format(order.inTransitAt!)}'
+            : 'En route to recipient destination',
         isCompleted: status == DeliveryStatus.arrivedDropoff ||
             status == DeliveryStatus.delivered,
         isActive: status == DeliveryStatus.inTransit,
       ),
       _TimelineStep(
         title: 'Delivered & Handover Confirmed',
-        subtitle: 'Security OTP verified at drop-off',
+        subtitle: order.deliveredAt != null
+            ? 'Delivered ${DateFormat('MMM d, h:mm a').format(order.deliveredAt!)} (PIN verified)'
+            : 'Security OTP verified at drop-off',
         isCompleted: status == DeliveryStatus.delivered,
         isActive: status == DeliveryStatus.arrivedDropoff,
       ),

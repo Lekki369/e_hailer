@@ -50,6 +50,29 @@ final class InvalidOtpFailure extends AppFailure {
   }) : super(message);
 }
 
+final class InvalidStatusTransitionFailure extends AppFailure {
+  final String fromStatus;
+  final String toStatus;
+
+  const InvalidStatusTransitionFailure({
+    required this.fromStatus,
+    required this.toStatus,
+    String? message,
+  }) : super(
+          message ??
+              'Illegal delivery status transition from "$fromStatus" to "$toStatus".',
+        );
+
+  @override
+  List<Object?> get props => [message, fromStatus, toStatus];
+}
+
+final class UnauthorizedActionFailure extends AppFailure {
+  const UnauthorizedActionFailure({
+    String message = 'You do not have permission to perform this operational action.',
+  }) : super(message);
+}
+
 final class UnexpectedFailure extends AppFailure {
   const UnexpectedFailure({
     String message = 'An unexpected error occurred.',

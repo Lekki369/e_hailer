@@ -87,6 +87,24 @@ class DisputeRemoteService {
             .toList());
   }
 
+  /// Assign a dispute ticket to an operations support officer (osTicket pattern)
+  Future<Either<AppFailure, Unit>> assignDisputeToAgent({
+    required String disputeId,
+    required String agentId,
+    required String agentName,
+  }) async {
+    try {
+      await _disputesRef.doc(disputeId).update({
+        'assignedAgentId': agentId,
+        'assignedAgentName': agentName,
+        'status': DisputeStatus.underInvestigation.name,
+      });
+      return right(unit);
+    } catch (e) {
+      return left(ServerFailure(message: 'Failed to assign dispute ticket: $e'));
+    }
+  }
+
   /// Resolve a dispute ticket with optional customer wallet refund or hub return
   Future<Either<AppFailure, Unit>> resolveDispute({
     required String disputeId,

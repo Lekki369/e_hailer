@@ -485,30 +485,87 @@ class DisputeManagementScreen extends HookConsumerWidget {
             ),
           ],
 
+          // Assigned Agent info
+          if (dispute.assignedAgentName != null) ...[
+            SizedBox(height: 8.h),
+            Row(
+              children: [
+                Icon(Icons.support_agent_rounded,
+                    size: 14.r, color: AppColors.secondary),
+                SizedBox(width: 4.w),
+                Text(
+                  'Assigned Officer: ${dispute.assignedAgentName}',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+
           // Arbitration Action Button (for Pending tickets)
           if (isPending) ...[
             SizedBox(height: 12.h),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (dispute.assignedAgentName == null) ...[
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.secondary,
+                      side: const BorderSide(color: AppColors.secondary),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 10.w, vertical: 8.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 14),
+                    label:
+                        Text('Claim Ticket', style: TextStyle(fontSize: 11.sp)),
+                    onPressed: () async {
+                      final currentUser =
+                          ref.read(currentUserProfileProvider).value;
+                      if (currentUser != null) {
+                        await ref
+                            .read(disputeRemoteServiceProvider)
+                            .assignDisputeToAgent(
+                              disputeId: dispute.id,
+                              agentId: currentUser.uid,
+                              agentName: currentUser.fullName,
+                            );
+                        if (context.mounted) {
+                          AppSnackBar.showSuccess(
+                              context, 'Ticket assigned to you.');
+                        }
+                      }
+                    },
                   ),
+                  SizedBox(width: 8.w),
+                ],
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  icon: const Icon(Icons.gavel_rounded, size: 16),
+                  label: Text(
+                    'Arbitrate & Resolve',
+                    style:
+                        TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    _showArbitrationModal(context, ref, dispute);
+                  },
                 ),
-                icon: const Icon(Icons.gavel_rounded, size: 16),
-                label: Text(
-                  'Arbitrate & Resolve',
-                  style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
-                ),
-                onPressed: () {
-                  _showArbitrationModal(context, ref, dispute);
-                },
-              ),
+              ],
             ),
           ],
         ],

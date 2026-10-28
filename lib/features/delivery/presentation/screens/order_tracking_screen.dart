@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -313,6 +314,10 @@ class OrderTrackingScreen extends HookConsumerWidget {
                                 currentUser: user);
                           },
                         ),
+                        const SizedBox(height: 18),
+
+                        // Delivery Milestone Progress Timeline
+                        _buildProgressTimeline(order),
                         const SizedBox(height: 18),
 
                         // 5. Assigned Driver Card (from MyOGA)
@@ -792,6 +797,158 @@ class OrderTrackingScreen extends HookConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProgressTimeline(DeliveryOrder order) {
+    final status = order.status;
+    final isCancelled = status == DeliveryStatus.cancelled;
+
+    final steps = [
+      (
+        title: 'Shipment Created',
+        subtitle: DateFormat('MMM d, h:mm a').format(order.createdAt),
+        isCompleted: true,
+        isActive: status == DeliveryStatus.searchingDriver,
+      ),
+      (
+        title: 'Courier Assigned',
+        subtitle: order.assignedAt != null
+            ? 'Dispatched ${DateFormat('MMM d, h:mm a').format(order.assignedAt!)}'
+            : (order.driverName != null
+                ? '${order.driverName} dispatched'
+                : 'Matching nearby fleet rider'),
+        isCompleted: status != DeliveryStatus.searchingDriver && !isCancelled,
+        isActive: status == DeliveryStatus.assigned,
+      ),
+      (
+        title: 'Package Picked Up',
+        subtitle: order.pickedUpAt != null
+            ? 'Picked up ${DateFormat('MMM d, h:mm a').format(order.pickedUpAt!)}'
+            : 'Courier received consignment from sender',
+        isCompleted: status == DeliveryStatus.pickedUp ||
+            status == DeliveryStatus.inTransit ||
+            status == DeliveryStatus.arrivedDropoff ||
+            status == DeliveryStatus.delivered,
+        isActive: status == DeliveryStatus.arrivedPickup,
+      ),
+      (
+        title: 'In Transit',
+        subtitle: order.inTransitAt != null
+            ? 'En route since ${DateFormat('MMM d, h:mm a').format(order.inTransitAt!)}'
+            : 'En route to recipient destination',
+        isCompleted: status == DeliveryStatus.arrivedDropoff ||
+            status == DeliveryStatus.delivered,
+        isActive: status == DeliveryStatus.inTransit,
+      ),
+      (
+        title: 'Delivered & Handover Confirmed',
+        subtitle: order.deliveredAt != null
+            ? 'Delivered ${DateFormat('MMM d, h:mm a').format(order.deliveredAt!)} (PIN verified)'
+            : 'Security OTP verified at drop-off',
+        isCompleted: status == DeliveryStatus.delivered,
+        isActive: status == DeliveryStatus.arrivedDropoff,
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Delivery Milestone Timeline',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: steps.length,
+            itemBuilder: (context, index) {
+              final step = steps[index];
+              final isLast = index == steps.length - 1;
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: step.isCompleted
+                              ? AppColors.success
+                              : step.isActive
+                                  ? AppColors.secondary
+                                  : AppColors.divider,
+                        ),
+                        child: Icon(
+                          step.isCompleted
+                              ? Icons.check
+                              : step.isActive
+                                  ? Icons.radio_button_checked
+                                  : Icons.circle,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (!isLast)
+                        Container(
+                          width: 2,
+                          height: 28,
+                          color: step.isCompleted
+                              ? AppColors.success
+                              : AppColors.divider,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            step.title,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: step.isCompleted || step.isActive
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            step.subtitle,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

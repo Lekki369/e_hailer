@@ -16,6 +16,8 @@ class DeliveryDispute extends Equatable {
   final String description;
   final String? evidenceNotes;
   final DisputeStatus status;
+  final String? assignedAgentId;
+  final String? assignedAgentName;
   final DateTime createdAt;
   final DateTime? resolvedAt;
   final String? resolvedBy;
@@ -35,6 +37,8 @@ class DeliveryDispute extends Equatable {
     required this.description,
     this.evidenceNotes,
     this.status = DisputeStatus.open,
+    this.assignedAgentId,
+    this.assignedAgentName,
     required this.createdAt,
     this.resolvedAt,
     this.resolvedBy,
@@ -55,6 +59,8 @@ class DeliveryDispute extends Equatable {
     String? description,
     String? evidenceNotes,
     DisputeStatus? status,
+    String? assignedAgentId,
+    String? assignedAgentName,
     DateTime? createdAt,
     DateTime? resolvedAt,
     String? resolvedBy,
@@ -74,6 +80,8 @@ class DeliveryDispute extends Equatable {
       description: description ?? this.description,
       evidenceNotes: evidenceNotes ?? this.evidenceNotes,
       status: status ?? this.status,
+      assignedAgentId: assignedAgentId ?? this.assignedAgentId,
+      assignedAgentName: assignedAgentName ?? this.assignedAgentName,
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
       resolvedBy: resolvedBy ?? this.resolvedBy,
@@ -95,6 +103,8 @@ class DeliveryDispute extends Equatable {
       'description': description,
       'evidenceNotes': evidenceNotes,
       'status': status.name,
+      'assignedAgentId': assignedAgentId,
+      'assignedAgentName': assignedAgentName,
       'createdAt': createdAt.toIso8601String(),
       'resolvedAt': resolvedAt?.toIso8601String(),
       'resolvedBy': resolvedBy,
@@ -117,6 +127,8 @@ class DeliveryDispute extends Equatable {
       description: map['description'] as String? ?? '',
       evidenceNotes: map['evidenceNotes'] as String?,
       status: DisputeStatus.fromString(map['status'] as String?),
+      assignedAgentId: map['assignedAgentId'] as String?,
+      assignedAgentName: map['assignedAgentName'] as String?,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -143,6 +155,8 @@ class DeliveryDispute extends Equatable {
         description,
         evidenceNotes,
         status,
+        assignedAgentId,
+        assignedAgentName,
         createdAt,
         resolvedAt,
         resolvedBy,

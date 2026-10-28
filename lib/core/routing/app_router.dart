@@ -10,10 +10,12 @@ import 'app_routes.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
   final userProfileAsync = ref.watch(currentUserProfileProvider);
+  final authService = ref.watch(authRemoteServiceProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.customerHomePath,
     debugLogDiagnostics: true,
+    refreshListenable: GoRouterRefreshStream(authService.authStateChanges),
     redirect: (context, state) {
       final isLoggedIn = authStateAsync.value != null;
       final isAuthFlow = state.matchedLocation == AppRoutes.loginPath ||
@@ -35,6 +37,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (user?.role == UserRole.admin) {
           return AppRoutes.adminDashboardPath;
         }
+        if (user?.role == UserRole.support) {
+          return AppRoutes.disputeManagementPath;
+        }
         if (user?.role == UserRole.driver) {
           return AppRoutes.driverDashboardPath;
         }
@@ -46,6 +51,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (user?.role == UserRole.admin) {
           return AppRoutes.adminDashboardPath;
         }
+        if (user?.role == UserRole.support) {
+          return AppRoutes.disputeManagementPath;
+        }
         if (user?.role == UserRole.driver) {
           return AppRoutes.driverDashboardPath;
         }
@@ -54,9 +62,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Role-based protection for Admin routes
       final isAdminRoute = state.matchedLocation.startsWith('/admin');
       if (isAdminRoute && user != null && user.role != UserRole.admin) {
+        if (user.role == UserRole.support &&
+            state.matchedLocation.contains('dispute')) {
+          return null;
+        }
         return user.role == UserRole.driver
             ? AppRoutes.driverDashboardPath
-            : AppRoutes.customerHomePath;
+            : user.role == UserRole.support
+                ? AppRoutes.disputeManagementPath
+                : AppRoutes.customerHomePath;
       }
 
       // Role-based protection for Driver fleet terminal
@@ -65,7 +79,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isDriverRoute && user != null && user.role != UserRole.driver) {
         return user.role == UserRole.admin
             ? AppRoutes.adminDashboardPath
-            : AppRoutes.customerHomePath;
+            : user.role == UserRole.support
+                ? AppRoutes.disputeManagementPath
+                : AppRoutes.customerHomePath;
       }
 
       return null;
