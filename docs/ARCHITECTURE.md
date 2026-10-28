@@ -1,4 +1,4 @@
-# e-Hailer Platform Architecture & Template Guide
+# e-Hailer Platform Architecture & Operational Template Guide
 
 A production-ready Flutter and Firebase architecture template combining **On-Demand Express Dispatch**, **Hub-and-Spoke Consignment Logistics**, and **Centralized Fleet Operations Command**.
 
@@ -13,42 +13,56 @@ Built with:
 
 ---
 
-## 1. System Topology & Architecture Graph
+## 1. Reference Blueprint Synthesis: Fleetbase, ERPNext & osTicket
+
+`e-Hailer` synthesizes the architectural best practices of three open-source enterprise standards to complete the operational logistics layer:
+
+| Reference Platform | Specialization Adopted | Implementation in e-Hailer |
+| :--- | :--- | :--- |
+| **Fleetbase** | Dispatch command center, real-time order board, driver assignment/reassignment, live fleet map, route telemetry, and unauthenticated public tracking portal. | [`AdminDashboardScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/admin_dashboard_screen.dart)<br>[`DispatchQueueScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/dispatch_queue_screen.dart)<br>[`ManualAssignmentModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/widgets/manual_assignment_modal.dart)<br>[`DriverManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/driver_management_screen.dart)<br>[`AdminMapOverviewScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/admin_map_overview_screen.dart)<br>[`PublicTrackingScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/screens/public_tracking_screen.dart) |
+| **ERPNext** | Financial ledger, double-entry digital wallet transactions, 80/20 driver/platform commission model, driver withdrawal payout queue, administrative settlement/refund actions, and multi-horizon business analytics. | [`WalletScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/screens/wallet_screen.dart)<br>[`PayoutManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/screens/payout_management_screen.dart)<br>[`FareBreakdownBottomSheet`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart)<br>[`PayoutRequestModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/widgets/payout_request_modal.dart)<br>[`AnalyticsDashboardScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/analytics_dashboard_screen.dart) |
+| **osTicket** | Delivery exception handling, ticket categorization, customer damage claims, operator arbitration, customer wallet refund credits, and return-to-hub authorizations. | [`delivery_dispute.dart`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/domain/entities/delivery_dispute.dart)<br>[`DisputeManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/screens/dispute_management_screen.dart)<br>[`ReportDeliveryIssueModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/widgets/report_delivery_issue_modal.dart)<br>[`FileDisputeModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/widgets/file_dispute_modal.dart) |
+
+---
+
+## 2. System Topology & Architecture Graph
 
 ```mermaid
 flowchart TD
     subgraph UI["Presentation Layer (Flutter Hooks + Riverpod)"]
         direction TB
-        CustomerScreens["Customer Views\n• CustomerHomeScreen\n• ExpressBookingScreen\n• ConsignmentCreationScreen\n• OrderTrackingScreen"]
-        DriverScreens["Driver Views\n• DriverDashboardScreen\n• IncomingJobBroadcastCard\n• DeliveryHandoverModal"]
-        AdminScreens["Admin Dispatch Views\n• AdminDashboardScreen\n• DispatchQueueScreen\n• DriverManagementScreen\n• AdminMapOverviewScreen\n• ManualAssignmentModal"]
-        AuthScreens["Auth Views\n• LoginScreen\n• RoleGuard\n• ProfileScreen & Terminal Switcher"]
+        CustomerScreens["Customer Views (Booking & Tracking)\n• CustomerHomeScreen\n• ExpressBookingScreen\n• ConsignmentCreationScreen\n• OrderTrackingScreen\n• PublicTrackingScreen"]
+        DriverScreens["Driver Views (Terminal & Handover)\n• DriverDashboardScreen\n• ActiveDeliveryScreen\n• ReportDeliveryIssueModal"]
+        AdminScreens["Admin Dispatch Views (Fleetbase Command)\n• AdminDashboardScreen\n• DispatchQueueScreen\n• DriverManagementScreen\n• AdminMapOverviewScreen\n• ManualAssignmentModal\n• AnalyticsDashboardScreen"]
+        WalletScreens["Wallet & Dispute Views (ERPNext & osTicket)\n• WalletScreen\n• PayoutManagementScreen\n• PayoutRequestModal\n• DisputeManagementScreen\n• FileDisputeModal"]
         
-        RiverpodProviders["Riverpod Providers\n• authStateProvider\n• currentUserProfileProvider\n• activeOrderStreamProvider\n• availableOrdersStreamProvider\n• allOrdersStreamProvider\n• fleetDriversStreamProvider\n• dispatchMetricsStreamProvider"]
+        RiverpodProviders["Riverpod Providers\n• authStateProvider & currentUserProfileProvider\n• activeOrderStreamProvider & availableOrdersStreamProvider\n• allOrdersStreamProvider & fleetDriversStreamProvider\n• operationsAnalyticsProvider & disputesStreamProvider"]
     end
 
     subgraph Domain["Domain Layer (Pure Dart 3 + Equatable)"]
         direction TB
-        Entities["Entities\n• DeliveryOrder\n• UserEntity\n• FleetDriverSummary\n• DispatchMetrics\n• LocationPoint\n• ParcelDetails\n• PricingDetails\n• RouteResult"]
-        ValueObjects["Value Objects & Enums\n• UserRole\n• DeliveryStatus\n• DeliveryType\n• VehicleType\n• PackageCategory"]
-        DomainServices["Domain Services\n• PricingCalculator (Volumetric & Distance)"]
+        Entities["Entities\n• DeliveryOrder & DeliveryDispute\n• UserEntity & PayoutRequest\n• FleetDriverSummary & OperationsAnalytics\n• LocationPoint, ParcelDetails, PricingDetails, RouteResult"]
+        ValueObjects["Value Objects & Enums\n• UserRole, DeliveryStatus, DeliveryType, VehicleType\n• DisputeCategory, DisputeStatus, PayoutStatus, TransactionType"]
+        DomainServices["Domain Services\n• PricingCalculator (Volumetric & Road Distance)"]
         Failures["Failures (Sealed Classes)\n• AppFailure (Server, Auth, Network, Location, InvalidOtp)"]
     end
 
     subgraph Infrastructure["Infrastructure Layer (External Adapters)"]
         direction TB
         AuthService["AuthRemoteService\n(Firebase Auth + Firestore /users)"]
-        DeliveryService["DeliveryRemoteService\n(Firestore /deliveries stream & actions)"]
-        AdminService["AdminRemoteService\n(Multi-stream aggregation & manual assignment)"]
-        OsmService["OsmRoutingService\n(OSRM Route Polylines & Nominatim Geocoding)"]
+        DeliveryService["DeliveryRemoteService\n(Firestore /deliveries & Handover PIN)"]
+        AdminService["AdminRemoteService\n(Dispatch streams & manual assignment)"]
+        WalletService["WalletRemoteService\n(Atomic ledger, payouts & top-up)"]
+        DisputeService["DisputeRemoteService\n(Arbitration, wallet refund & returns)"]
+        OsmService["OsmRoutingService\n(OSRM polylines & Nominatim geocoding)"]
     end
 
     subgraph CloudServices["External Cloud & Open APIs"]
         direction TB
-        FirebaseAuth["Firebase Authentication (Phone & Email)"]
+        FirebaseAuth["Firebase Authentication (Phone OTP & Email)"]
         Firestore["Cloud Firestore Database"]
         OSRM["Open Source Routing Machine (OSRM API)"]
-        OSM["OpenStreetMap Raster Tile Servers"]
+        OSM["OpenStreetMap Free Raster Tile Servers"]
     end
 
     UI --> RiverpodProviders
@@ -60,6 +74,8 @@ flowchart TD
     AuthService --> Firestore
     DeliveryService --> Firestore
     AdminService --> Firestore
+    WalletService --> Firestore
+    DisputeService --> Firestore
     OsmService --> OSRM
     CustomerScreens --> OSM
     DriverScreens --> OSM
@@ -68,307 +84,130 @@ flowchart TD
 
 ---
 
-## 2. Layering Principles & Folder Conventions
-
-Every feature module inside `lib/features/<feature_name>/` follows the strict 3-tier DDD separation:
-
-```
-feature_module/
-├── domain/                    # PURE DART: Business entities, interfaces, value objects, rules
-│   ├── entities/              # Models extending Equatable (props, toMap, fromMap, copyWith)
-│   ├── value_objects/         # Enums, validation rules, state enums
-│   └── services/              # Pure algorithmic calculations (e.g., PricingCalculator)
-│
-├── infrastructure/            # IMPLEMENTATION: Remote APIs, SDKs, external dependencies
-│   ├── <name>_remote_service.dart  # Firestore / HTTP / Location clients returning Either<AppFailure, T>
-│   └── dtos/ (if needed)      # Raw response mappers
-│
-└── presentation/              # FLUTTER: Widgets, Hooks, and Riverpod State
-    ├── providers/             # StreamProviders, StateProviders, Notifiers
-    ├── screens/               # Complete pages rendered by GoRouter
-    ├── routes/                # Centralized feature route definitions
-    └── widgets/               # Reusable modular UI components
-```
-
-### Why No `build_runner`?
-Most Flutter templates rely on `freezed`, `json_serializable`, and `riverpod_generator`. While convenient, they introduce:
-1. Long build wait times (`dart run build_runner watch` consumes GBs of RAM).
-2. Frequent analyzer version mismatch errors during Flutter SDK upgrades.
-3. Obfuscated `.freezed.dart` and `.g.dart` generated files that clutter repositories.
-
-In **e-Hailer**, all entities extend [`package:equatable`](https://pub.dev/packages/equatable) with concise `toMap` and `fromMap` factory methods. The resulting codebase is fast, predictable, hot-reloads instantly, and maintains 100% clean static analysis (`flutter analyze` finishes in ~4 seconds).
-
----
-
 ## 3. Order Lifecycle State Machine
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Created: Customer prepares shipment / express ride
+    [*] --> Created: Customer books express ride or consignment
     
     state Created {
         [*] --> SearchingDriver: Express On-Demand Hailing
-        [*] --> HubQueued: Consignment Parcel
+        [*] --> HubQueued: Consignment Parcel Ingestion
     }
 
-    SearchingDriver --> Assigned: Nearby driver taps 'Accept Job'
+    SearchingDriver --> Assigned: Nearby driver accepts job
     SearchingDriver --> Assigned: Dispatcher manually assigns via Admin Console
     HubQueued --> Assigned: Dispatcher assigns fleet driver
     
     Assigned --> ArrivedPickup: Driver reaches sender location
     ArrivedPickup --> PickedUp: Parcel loaded / ride started
     PickedUp --> InTransit: Navigating via OSRM Polyline
-    InTransit --> ArrivedDropoff: Reached destination
+    InTransit --> ArrivedDropoff: Courier arrives at destination
     ArrivedDropoff --> Delivered: Recipient provides 4-digit PIN
     
-    SearchingDriver --> Cancelled: Timeout / Customer cancels / Admin cancels
+    SearchingDriver --> Cancelled: Customer cancels / Dispatcher cancels
     Assigned --> Cancelled: Driver / Customer cancels with reason
     Assigned --> Assigned: Dispatcher reassigns to new driver
     
+    InTransit --> FailedDelivery: Recipient unreachable / Inaccessible address
+    FailedDelivery --> ReturnedToHub: Dispute resolution authorizes return
+    Delivered --> Disputed: Customer files damage / overcharge claim
+    Disputed --> Refunded: Admin issues wallet refund credit
+    
     Delivered --> [*]
     Cancelled --> [*]
+    Refunded --> [*]
+    ReturnedToHub --> [*]
 ```
 
 ---
 
-## 4. Key Engineering Innovations in e-Hailer
+## 4. Operational Modules & Phased Implementation
 
-### 1. Volumetric Weight vs. Physical Weight
-Traditional ride-hailing apps only calculate pricing based on distance. In logistics, bulky lightweight items (e.g., styrofoam, empty boxes) take up cargo space.
-Fusing the rule from **courierManagementSystem**:
-$$\text{Volumetric Weight (kg)} = \frac{\text{Length (cm)} \times \text{Width (cm)} \times \text{Height (cm)}}{5000}$$
-$$\text{Billable Weight} = \max(\text{Physical Weight}, \text{Volumetric Weight})$$
-
-### 2. Free OpenStreetMap + OSRM Road Routing
-Zero reliance on Google Maps Platform API keys or billing:
-- Tiles: OpenStreetMap standard tiles (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`).
-- Driving Routes: Open Source Routing Machine (`router.project-osrm.org`) calculates actual driving road geometries, real kilometers, and traffic travel times.
-- Reverse Geocoding: OpenStreetMap Nominatim translates coordinates to street addresses.
-
-### 3. Zero-Cost Handover Verification PIN
-Eliminates reliance on paid Cloud Storage (GCS) for signatures or photo uploads:
-- Every order auto-generates a secure 4-digit OTP saved in the Firestore order document.
-- The recipient provides this code to the courier upon delivery.
-- The courier enters the PIN to confirm completion, instantly releasing payment and updating order status.
-
----
-
-## 5. Operations Command Center & Fleet Dispatch Architecture
-
-The `admin` module elevates `e-Hailer` from a mobile app into a complete logistics business operations platform:
-
-### 1. Multi-Role Ecosystem Separation
-- **`UserRole.customer`**: Routes to `/home`. Access to on-demand hailing, consignment creation, and order tracking.
-- **`UserRole.driver`**: Routes to `/driver`. Access to online/offline broadcast terminal, incoming job requests, and PIN verification.
-- **`UserRole.admin`**: Routes to `/admin`. Access to Operations Command Center, Live Dispatch Queue, Fleet Roster, and Real-Time Operations Map.
-- **Terminal Switcher**: Built directly into `ProfileScreen` for seamless testing and operational role transitions.
-
-### 2. Live Dispatch Queue (`DispatchQueueScreen`)
-- Real-time Firestore stream of all orders across the entire platform.
-- Filterable by lifecycle status: `All`, `Pending`, `Assigned`, `In Transit`, `Delivered`, `Cancelled`.
-- Instant search filter supporting Waybill tracking numbers, customer names, phone numbers, and addresses.
-
-### 3. Manual Assignment & Reassignment Engine (`ManualAssignmentModal`)
-- One-tap assignment sheet that filters registered drivers by online status (`isAvailable == true`) and vehicle class.
-- Atomically updates Firestore `deliveries` and links `currentOrderId` to the driver's profile in a batch transaction.
-- Supports operational reassignment for delayed or unresponsive drivers with an audit note.
-
-### 4. Fleet Driver Management (`DriverManagementScreen`)
-- Full roster overview displaying driver name, phone, vehicle category (Motorcycle, Car, Van, Truck), plate number, and customer rating.
-- Live online/offline filter and search bar.
-
-### 5. Fleet Map Overview (`AdminMapOverviewScreen`)
-- Free OpenStreetMap interactive view rendering:
-  - Green markers for available online drivers with live GPS coordinates.
-  - Orange/Primary markers for pending order pickup locations.
-  - Interactive tap cards to inspect details and assign orders directly from the map.
+### Phase 1: Admin Dispatch Workflow (Reference: Fleetbase)
+- **Goal**: Turn the administration console into an industrial dispatch center.
+- **Components**:
+  1. [`AdminDashboardScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/admin_dashboard_screen.dart):
+     - Real-time KPI summaries: Total Active Orders, Assigned Orders, Unassigned Orders, Delayed Orders, Online Drivers, Today's Gross Revenue.
+     - Quick navigation to Queue, Fleet Map, Drivers, Payouts, and Analytics.
+  2. [`DispatchQueueScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/dispatch_queue_screen.dart):
+     - Filterable by operational state: `All`, `Pending`, `Assigned`, `In Transit`, `Delivered`, `Cancelled`.
+     - Real-time search across Waybill numbers, customer names, phone numbers, and addresses.
+  3. [`DriverManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/driver_management_screen.dart):
+     - Driver roster displaying online/offline status, vehicle category, plate number, trip volume, and customer rating.
+  4. [`ManualAssignmentModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/widgets/manual_assignment_modal.dart):
+     - Single-tap driver assignment filtered by online availability (`isAvailable == true`) and vehicle class.
+     - Atomic Firestore batch transaction updating order status and driver profile.
+  5. [`AdminMapOverviewScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/admin_map_overview_screen.dart):
+     - OpenStreetMap live visualization rendering green markers for online drivers and orange markers for pending pickups with direct assignment sheet.
 
 ---
 
-## 6. Payment, COD Commission Settlement, & Driver Payout Lifecycle
+### Phase 2: Payout and Earnings System (Reference: ERPNext + Fleetbase)
+- **Goal**: Implement double-entry wallet accounting, automated commission splits, and bank withdrawal workflows.
+- **Business Rules**:
+  - **Platform Commission**: 20%
+  - **Driver Net Earnings**: 80%
+  - **Digital Payment Settlement**: Driver wallet atomically credited with +80% net earnings upon PIN verification.
+  - **Cash on Delivery (COD) Settlement**: Driver collects 100% physical cash; driver wallet atomically debited by -20% platform commission (`TransactionType.codCommission`).
+- **Components**:
+  1. [`WalletScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/screens/wallet_screen.dart): Live balance, transaction history ledger, top-up modal.
+  2. [`PayoutManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/screens/payout_management_screen.dart): Driver withdrawal request queue (`pending`, `settled`, `rejected`), approve with bank reference, or reject with atomic refund.
+  3. [`FareBreakdownBottomSheet`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/widgets/fare_breakdown_bottom_sheet.dart): Displays Base Fare, Road Distance, Volumetric Excess, Fragile Surcharge, and 80/20 Driver/Platform split.
+  4. [`PayoutRequestModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/wallet/presentation/widgets/payout_request_modal.dart): NUBAN 10-digit account validation, Nigerian bank selection, immediate balance locking.
 
-The platform implements a dual payment architecture handling both prepaid digital transactions and physical Cash on Delivery (COD):
+---
 
-```mermaid
-flowchart TD
-    OrderCompletion["Handover Verification PIN Verified"] --> PaymentType{"Payment Method?"}
-    
-    PaymentType -- "Digital Wallet / Card" --> DigitalSettlement["Digital Settlement\n• Customer paid upfront\n• Credit Driver: +80% net earnings\n• Platform retains: 20% commission"]
-    
-    PaymentType -- "Cash on Delivery (COD)" --> CodSettlement["COD Settlement\n• Driver collected 100% cash in hand\n• Deduct Driver Wallet: -20% platform commission\n• Ledger: codCommission"]
-    
-    DigitalSettlement --> DriverWallet["Driver Wallet Balance Updated"]
-    CodSettlement --> DriverWallet
-    
-    DriverWallet --> PayoutRequestAction["Driver requests withdrawal via PayoutRequestModal"]
-    PayoutRequestAction --> PayoutPending["PayoutRequest status: pending\n• Locked amount deducted from wallet"]
-    
-    PayoutPending --> AdminReview{"Admin Payout Console (/admin/payouts)"}
-    AdminReview -- "Approve & Transfer" --> PayoutSettled["status: settled\n• Bank transfer ref recorded"]
-    AdminReview -- "Reject & Revert" --> PayoutRejected["status: rejected\n• Amount refunded back to Driver Wallet\n• Ledger: payoutReversal"]
+### Phase 3: Public Tracking Experience (Reference: Fleetbase Customer Portal)
+- **Goal**: Enable recipients and customers to track consignments without creating an account or logging in.
+- **Components**:
+  1. [`PublicTrackingScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/screens/public_tracking_screen.dart):
+     - Accessible unauthenticated via `/track/:trackingNumber` or `/track`.
+     - Live interactive OpenStreetMap rendering pickup, drop-off, and moving courier GPS coordinates.
+     - Real-time step-by-step progress timeline.
+     - Recipient Handover Security PIN alert banner (fraud prevention).
+     - Courier contact card and shareable tracking link clipboard utility.
+  2. [`OrderTrackingScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/screens/order_tracking_screen.dart):
+     - Authenticated tracking view with on-screen QR Code consignment waybill rendering (`QrImageView`).
+
+---
+
+### Phase 4: Dispute and Issue Handling (Reference: osTicket)
+- **Goal**: Handle delivery exceptions, driver delivery failures, damaged parcel claims, and operator arbitration.
+- **Status Lifecycle**: `open` $\rightarrow$ `underReview` $\rightarrow$ `resolved` / `dismissed`.
+- **Categories**: `damagedItem`, `wrongAddress`, `unreachableRecipient`, `missingItem`, `fareDispute`, `driverMisconduct`.
+- **Components**:
+  1. [`ReportDeliveryIssueModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/widgets/report_delivery_issue_modal.dart): Allows couriers to abort dropoff safely with reason logging (`failedDelivery`).
+  2. [`FileDisputeModal`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/widgets/file_dispute_modal.dart): Customer claim submission attached to order with claimant contact and category.
+  3. [`DisputeManagementScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/delivery/presentation/screens/dispute_management_screen.dart): Operations arbitration desk at `/admin/disputes`. Authorizes atomic wallet refunds, initiates return-to-hub shipments, or dismisses claims.
+
+---
+
+### Phase 5: Fleet Analytics & KPI Dashboard (Reference: ERPNext + Fleetbase)
+- **Goal**: Translate operations into data-driven decision-making and executive visibility.
+- **Components**:
+  1. [`AnalyticsDashboardScreen`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/lib/features/admin/presentation/screens/analytics_dashboard_screen.dart):
+     - Dynamic time-horizon slicing: **Today**, **Past 7 Days**, **Past 30 Days**, **All Time**.
+     - Gross Merchandise Volume (GMV) and realized 20% platform commission revenue.
+     - Fulfillment funnels (Completion rate, In-Transit volume, Failure rate).
+     - Settlement modality distribution (Cash on Delivery vs Digital Wallet).
+     - Fleet vehicle allocation distribution (Motorcycle, Sedan, Cargo Van, Heavy Truck).
+     - Courier performance leaderboard ranked by completed volume, rating, and gross revenue generated.
+
+---
+
+### Phase 6: Production Hardening & Release Polish
+- **Firestore Security Rules**: Authored in [`firestore.rules`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/firestore.rules) with default-deny, role-based access control (RBAC), and immutable 4-digit handover verification PINs.
+- **Swift Package Manager Migration**: Completely eliminated CocoaPods (`ios/Podfile` removed; all plugins resolved via native Swift Packages in Xcode).
+- **Zero Google Maps Billing**: 100% free raster tiles from OpenStreetMap + OSRM driving geometries.
+- **Zero Paid Cloud Storage**: Cryptographic PIN handover verification eliminates Cloud Storage costs.
+- **Static Analysis Standard**: 0 errors, 0 warnings across all files.
+
+---
+
+## 5. Architectural Diagram (Interactive HTML)
+An interactive, standalone visual architecture diagram is maintained with Archify at [`docs/architecture.html`](file:///Users/olamilekanawomewe/Desktop/FLUTTER%20PROJECTS/e_hailer/docs/architecture.html).
+To re-render or update:
+```bash
+node .agents/skills/archify/bin/archify.mjs render architecture docs/architecture.json docs/architecture.html
 ```
-
-### 1. Cash on Delivery (COD) vs Digital Settlement Mechanics
-- **Digital Payment (`wallet` / `card`)**:
-  - The customer is debited upon booking.
-  - Upon delivery PIN verification, the system runs an atomic Firestore transaction crediting the driver's wallet with **80%** of the gross fare (`PricingDetails.driverEarnings`).
-  - Ledger entry: `TransactionType.deliveryEarnings`.
-- **Cash on Delivery (`cashOnDelivery`)**:
-  - The driver collects **100%** of the gross fare in cash directly from the recipient.
-  - To collect the platform's cut, the driver's digital wallet balance is atomically debited by **20%** (`PricingDetails.platformCommission`).
-  - Ledger entry: `TransactionType.codCommission`.
-
-### 2. Driver Withdrawal & Payout Workflow (`PayoutRequestModal`)
-- Fleet drivers access their wallet terminal to submit payout requests to any verified Nigerian commercial bank or Neobank (Access, GTBank, Zenith, Kuda, Moniepoint, etc.).
-- Preset chips (`₦2,000`, `₦5,000`, `₦10,000`, `All`) and 10-digit NUBAN validation.
-- Submitting locks the requested amount immediately to prevent double-spending.
-
-### 3. Admin Payout Settlement Console (`PayoutManagementScreen`)
-- Dedicated command route at `/admin/payouts`.
-- Filterable tabs: `All`, `Pending Review`, `Settled`, `Rejected`.
-- Real-time search across driver names, phone numbers, and destination account numbers.
-- **Approve & Mark Settled**: Records administrator ID, processing timestamp, and bank reference.
-- **Reject & Refund**: Prompts for a rejection reason, transitions status to `rejected`, and atomically credits the locked funds back into the driver's digital wallet with a `payoutReversal` transaction.
-
-### 4. Universal Fare Breakdown Modal (`FareBreakdownBottomSheet`)
-- Embedded across Customer Tracking, Driver Delivery Terminal, and Admin Dispatch Queue.
-- Translucently displays Base Fare, Road Distance, Volumetric Excess, Fragile Surcharge, 80/20 Driver/Platform split, and payment badge.
-
----
-
-## 7. Customer Public Tracking Portal & Waybill Deep-Linking Architecture
-
-To build trust and transparency, shipments are publicly trackable without mandatory account creation or login barriers:
-
-```mermaid
-flowchart LR
-    DeepLink["Public Tracking URL\nhttps://ehailer.app/track/{WAYBILL}"] --> AuthCheck{"GoRouter Guard\nstate.startsWith('/track')"}
-    AuthCheck -- "Unauthenticated" --> AllowPublic["Public Access Granted\n(No Login Required)"]
-    AuthCheck -- "Authenticated" --> AllowPublic
-    
-    AllowPublic --> PublicScreen["PublicTrackingScreen\n(/track/:trackingNumber)"]
-    PublicScreen --> LiveStream["watchOrderByTrackingNumber() Stream"]
-    LiveStream --> LiveMap["Interactive OSM Map\n(Pickup, Dropoff, Live Driver GPS)"]
-    LiveStream --> Timeline["Real-time Delivery Timeline"]
-    LiveStream --> OTPCard["Handover Security PIN Alert\n(Fraud Protection)"]
-    LiveStream --> CourierCard["Assigned Courier & Phone Contact"]
-```
-
-### 1. Zero-Friction Deep Linking (`/track/:trackingNumber`)
-- Customers and recipients can track any shipment by simply following a shared link (`https://ehailer.app/track/WAYBILL-XXXXX`) or navigating to `/track`.
-- The router bypasses authentication for all `/track/*` paths while safeguarding administrative and financial screens.
-
-### 2. Live OpenStreetMap Courier Tracking
-- Renders free OpenStreetMap vector/raster tiles via `OsmMapWidget`.
-- Displays real-time driver coordinates (`driverLatitude`, `driverLongitude`) when the courier is en route, alongside pickup and drop-off markers.
-
-### 3. Fraud-Proof 4-Digit Security PIN Banner
-- Explicitly reminds the recipient of their auto-generated 4-digit handover PIN (`recipientSecurityOtp`).
-- Instructs the recipient to only provide the code once the package has been physically handed over, preventing premature delivery completions.
-
-### 4. Direct Communication & Barcode Scanner
-- Displays the assigned driver's full name, vehicle class, rating, and quick one-tap phone contact dialog.
-- Provides an on-screen high-resolution 2D QR Code waybill modal (`QrImageView`) for scanning at hub checkpoints.
-
----
-
-## 8. Returns, Disputes, & Incident Resolution Architecture
-
-Logistics operations encounter real-world exceptions: damaged parcels, unreachable recipients, inaccessible addresses, or customer claims. `e-Hailer` includes a dedicated arbitration and return-to-hub workflow:
-
-```mermaid
-flowchart TD
-    ExceptionTrigger{"Delivery Incident?"}
-    
-    ExceptionTrigger -- "Driver cannot complete\n(Recipient unreachable / Wrong address)" --> DriverReport["ReportDeliveryIssueModal\n• Category logged\n• Order marked: failedDelivery"]
-    
-    ExceptionTrigger -- "Customer reports issue\n(Damaged parcel / Overcharge)" --> CustomerClaim["FileDisputeModal\n• Claimant details & description\n• Dispute ticket logged in /disputes"]
-    
-    DriverReport --> AdminQueue["Dispute Management Console (/admin/disputes)"]
-    CustomerClaim --> AdminQueue
-    
-    AdminQueue --> ArbitrateAction{"Operator Arbitration"}
-    
-    ArbitrateAction -- "Approve Refund" --> RefundTx["Atomic Customer Wallet Credit\n• +₦ refundAmount\n• Ledger: TransactionType.refund"]
-    ArbitrateAction -- "Return to Hub" --> ReturnLeg["Authorize Return Leg\n• Order marked: returnedToHub\n• returnTrackingNumber assigned"]
-    ArbitrateAction -- "Dismiss Claim" --> DismissTicket["Ticket status: rejected\n• Explanation notes recorded"]
-```
-
-### 1. Driver Delivery Failure Engine (`ReportDeliveryIssueModal`)
-- When a courier is unable to complete dropoff, they can report exceptions with specific categories (`unreachableRecipient`, `wrongAddress`, `packageRefused`, `damagedItem`).
-- Atomically transitions order status to `DeliveryStatus.failedDelivery` with cancellation reasoning and returns the courier safely to the dashboard.
-
-### 2. Customer Dispute & Damage Claim Portal (`FileDisputeModal`)
-- Accessible directly from tracking interfaces (`OrderTrackingScreen` and `PublicTrackingScreen`).
-- Captures claimant name, phone number, category (`damagedItem`, `missingItem`, `fareDispute`, `driverMisconduct`), and detailed incident description.
-
-### 3. Operations Arbitration Console (`DisputeManagementScreen` at `/admin/disputes`)
-- Real-time Firestore stream with status filters: `All`, `Open Review`, `Refunded`, `Returned to Hub`, `Dismissed`.
-- Direct action panel enabling hub operators to:
-  1. **Authorize Customer Refund**: Instantly credits customer digital wallet balance with audit transaction log.
-  2. **Authorize Return to Hub**: Updates shipment to `returnedToHub` with tracking code.
-  3. **Dismiss Claim**: Records findings and closes ticket.
-
----
-
-## 9. Fleet Analytics & Business Intelligence Engine
-
-Operational sustainability requires real-time visibility into revenue streams, driver output, and shipment fulfillment funnels:
-
-```mermaid
-flowchart TD
-    subgraph DataFeeds["Real-time Operational Feeds"]
-        OrdersStream["allOrdersStreamProvider\n(Live Firestore Deliveries)"]
-        DriversStream["fleetDriversStreamProvider\n(Live Firestore Drivers)"]
-        TimeFilter["analyticsTimeRangeProvider\n(Today | 7 Days | 30 Days | All Time)"]
-    end
-
-    subgraph AnalyticsEngine["Analytics Engine (Pure Dart Domain)"]
-        Synthesizer["operationsAnalyticsProvider\n(Pure Riverpod Provider)"]
-        GMVCalc["Financial Engine\n• Gross Merchandise Volume (GMV)\n• 20% Platform Commission\n• 80% Driver Payouts"]
-        FunnelCalc["Fulfillment Funnel\n• Completion Rate (%)\n• Active In-Transit\n• Failure / Return Rate (%)"]
-        ModalitySplit["Settlement Modality\n• COD vs Digital Wallet %"]
-        LeaderboardCalc["Driver Performance Leaderboard\n• Trip Count & Ratings"]
-    end
-
-    subgraph UI["Executive Reporting Console (/admin/analytics)"]
-        AnalyticsScreen["AnalyticsDashboardScreen"]
-        GmvCard["GMV & 80/20 Split Card"]
-        SettlementBar["Modality Split Segmented Bar"]
-        FunnelGrid["Fulfillment Reliability Grid"]
-        VehicleGrid["Fleet Vehicle Allocation Grid"]
-        LeaderboardList["Ranked Courier Leaderboard (🥇, 🥈, 🥉)"]
-    end
-
-    OrdersStream --> Synthesizer
-    DriversStream --> Synthesizer
-    TimeFilter --> Synthesizer
-
-    Synthesizer --> GMVCalc
-    Synthesizer --> FunnelCalc
-    Synthesizer --> ModalitySplit
-    Synthesizer --> LeaderboardCalc
-
-    GMVCalc --> GmvCard
-    ModalitySplit --> SettlementBar
-    FunnelCalc --> FunnelGrid
-    LeaderboardCalc --> LeaderboardList
-    AnalyticsEngine --> AnalyticsScreen
-```
-
-### 1. Dynamic Horizon Slicing
-- Operators toggle between **Today**, **Past 7 Days**, **Past 30 Days**, and **All Time** with reactive instantaneous UI updates.
-- Orders and driver deliveries are filtered purely in-memory via Riverpod without extra database read queries.
-
-### 2. GMV & 80/20 Platform Revenue Engine
-- Automatically aggregates total gross booking values.
-- Realizes the **80% Driver Net Payout** and **20% Platform Commission** split, maintaining consistency with `PricingCalculator`.
-
-### 3. Modality Distribution & Cargo Weight
-- Tracks customer settlement preferences (**Cash on Delivery** vs **Prepaid In-App Digital Wallet**).
-- Computes aggregate physical and volumetric tonnage moved across the courier network in kilograms ($kg$).
-
-### 4. Fleet Vehicle Breakdown & Courier Leaderboard
-- Measures dispatch distribution across vehicle tiers (`Motorcycle`, `Sedan`, `Cargo Van`, `Heavy Truck`).
-- Ranks top-performing couriers by completed trip volume, customer ratings, and total gross delivery value generated.
-
