@@ -1,0 +1,18 @@
+apiServer:
+  port: 8797
+  publicHost: localhost
+  publicPort: 8797
+  publicScheme: http
+insightsServer:
+  port: 8798
+  publicHost: localhost
+  publicPort: 8798
+  publicScheme: http
+webServer:
+  port: 8799
+  publicHost: localhost
+  publicPort: 8799
+  publicScheme: http
+maxRequestSize: 65536
+sessionLogs:
+  consoleEnabled: false

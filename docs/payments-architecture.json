@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "e-Hailer hosted wallet funding",
+    "locale": "en",
+    "output": "docs/payments-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Lekki369/e_hailer.git",
+      "revision": "f71a2527012cd01da9b5b98490c7fa84dad767aa",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "wallet",
+      "type": "frontend",
+      "label": "Flutter wallet",
+      "sublabel": "Recover / open / check",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "lib/features/wallet/infrastructure/wallet_payment_service.dart",
+          "line": 10,
+          "end_line": 37
+        },
+        {
+          "path": "lib/features/wallet/presentation/widgets/wallet_top_up_dialog.dart",
+          "line": 93,
+          "end_line": 143
+        },
+        {
+          "path": "lib/core/infrastructure/operations_api.dart",
+          "line": 40,
+          "end_line": 159
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Serverpod command API",
+      "sublabel": "Authenticated UID required",
+      "pos": [
+        455,
+        40
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/endpoints/operations_endpoint.dart",
+          "line": 8,
+          "end_line": 50
+        },
+        {
+          "path": "server/ehailer_server/lib/server.dart",
+          "line": 49,
+          "end_line": 67
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Firebase Authentication",
+      "sublabel": "Token and revocation check",
+      "pos": [
+        870,
+        40
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/server.dart",
+          "line": 49,
+          "end_line": 58
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "type": "external",
+      "label": "Paystack",
+      "sublabel": "Hosted checkout + HTTPS API",
+      "pos": [
+        40,
+        310
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/infrastructure/paystack_gateway.dart",
+          "line": 20,
+          "end_line": 117
+        }
+      ]
+    },
+    {
+      "id": "payments",
+      "type": "backend",
+      "label": "Payment service",
+      "sublabel": "Owner, amount and mode checks",
+      "pos": [
+        455,
+        310
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/domain/payment_service.dart",
+          "line": 74,
+          "end_line": 202
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/domain/payment_service.dart",
+          "line": 205,
+          "end_line": 289
+        },
+        {
+          "path": "server/ehailer_server/lib/src/core/infrastructure/runtime_environment.dart",
+          "line": 1,
+          "end_line": 65
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Cloud Firestore",
+      "sublabel": "Private intents / ledger / receipts",
+      "pos": [
+        870,
+        310
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/core/infrastructure/firestore_command_store.dart",
+          "line": 5,
+          "end_line": 33
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/domain/payment_service.dart",
+          "line": 229,
+          "end_line": 289
+        }
+      ]
+    },
+    {
+      "id": "webhook",
+      "type": "security",
+      "label": "Public webhook route",
+      "sublabel": "Raw-body HMAC-SHA512 gate",
+      "pos": [
+        40,
+        580
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/endpoints/paystack_webhook_route.dart",
+          "line": 7,
+          "end_line": 56
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/payments/infrastructure/paystack_gateway.dart",
+          "line": 119,
+          "end_line": 135
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "wallet-rpc",
+      "from": "wallet",
+      "to": "api",
+      "label": "Token + RPC",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify-identity",
+      "from": "api",
+      "to": "auth",
+      "label": "Verify token",
+      "variant": "security"
+    },
+    {
+      "id": "owner-commands",
+      "from": "api",
+      "to": "payments",
+      "label": "Owner commands",
+      "variant": "security"
+    },
+    {
+      "id": "open-checkout",
+      "from": "wallet",
+      "to": "provider",
+      "label": "Open checkout",
+      "variant": "default"
+    },
+    {
+      "id": "provider-api",
+      "from": "payments",
+      "to": "provider",
+      "label": "Initialize / verify",
+      "variant": "default"
+    },
+    {
+      "id": "provider-event",
+      "from": "provider",
+      "to": "webhook",
+      "label": "Signed POST",
+      "variant": "dashed"
+    },
+    {
+      "id": "verified-event",
+      "from": "webhook",
+      "to": "payments",
+      "label": "Valid HMAC event",
+      "variant": "security"
+    },
+    {
+      "id": "settlement",
+      "from": "payments",
+      "to": "store",
+      "label": "Verified atomic credit",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Checkout is not payment proof",
+      "items": [
+        "The API saves an intent before provider initialization.",
+        "Browser return cannot grant credit; the server verifies Paystack.",
+        "Pending checkout is recoverable after app restart."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "One verified credit",
+      "items": [
+        "Verify success, reference, mode, currency, amount and email.",
+        "Webhooks and owner checks use one transactional settlement.",
+        "A unique provider receipt prevents duplicate wallet value."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Implementation and acceptance",
+      "items": [
+        "Sources pin local code; no deployed provider is claimed.",
+        "Test credits require isolated Firebase storage and identity.",
+        "Real sandbox acceptance and chargeback reconciliation remain."
+      ]
+    }
+  ]
+}

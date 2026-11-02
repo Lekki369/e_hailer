@@ -1,0 +1,5 @@
+class: CommandReply
+fields:
+  dataJson: String
+  errorCode: String?
+  errorMessage: String?

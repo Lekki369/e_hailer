@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
+    function admin() { return signedIn() && role() == 'admin'; }
+    function staff() { return signedIn() && role() in ['admin', 'support']; }
+    function participant(data) {
+      return signedIn() && (data.customerId == request.auth.uid || data.get('driverId', '') == request.auth.uid || staff());
+    }
+    function validProfile(data) {
+      return data.uid == request.auth.uid &&
+        data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.phone is string && data.phone.size() <= 30 && data.isAvailable is bool &&
+        data.get('vehicleType', null) in [null, 'bike', 'car', 'van', 'truck'] &&
+        (data.get('vehiclePlateNumber', null) == null || (data.vehiclePlateNumber is string && data.vehiclePlateNumber.size() <= 20)) &&
+        (data.get('vehicleModel', null) == null || (data.vehicleModel is string && data.vehicleModel.size() <= 50));
+    }
+    match /users/{uid} {
+      allow get: if owner(uid) || staff();
+      allow list: if staff();
+      allow create: if owner(uid) && validProfile(request.resource.data) &&
+        request.resource.data.keys().hasOnly(['uid', 'role', 'fullName', 'email', 'phone', 'avatarUrl', 'walletBalance', 'rating', 'isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel', 'createdAt']) &&
+        request.resource.data.role in ['customer', 'driver'] &&
+        request.resource.data.walletBalance == 0 && request.resource.data.rating == 5 &&
+        request.resource.data.avatarUrl == null && request.resource.data.createdAt is string;
+      allow update: if owner(uid) && validProfile(request.resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel', 'fcmRegistrationId', 'fcmTokenUpdatedAt']) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel']) || resource.data.role == 'driver') &&
+        (request.resource.data.get('fcmRegistrationId', null) == null || (request.resource.data.fcmRegistrationId is string && request.resource.data.fcmRegistrationId.size() <= 4096));
+      allow delete: if false;
+      match /transactions/{id} {
+        allow read: if owner(uid) || admin();
+        allow write: if false;
+      }
+    }
+    // Trusted API only: ownership, transitions, prices, ledger and timeline writes
+    // are validated together in a server-side Firestore transaction.
+    match /deliveries/{id} {
+      allow read: if participant(resource.data);
+      allow write: if false;
+      match /timeline/{eventId} {
+        allow read: if participant(get(/databases/$(database)/documents/deliveries/$(id)).data);
+        allow write: if false;
+      }
+    }
+    // PINs never appear in orders, job offers or public tracking.
+    match /deliveryPins/{id} {
+      allow get: if owner(resource.data.customerId);
+      allow list, write: if false;
+    }
+    match /jobOffers/{id} {
+      allow read: if signedIn() && role() == 'driver';
+      allow write: if false;
+    }
+    // A single redacted lookup using a cryptographically random tracking token.
+    match /publicTracking/{token} {
+      allow get: if resource.data.expiresAtMillis > request.time.toMillis();
+      allow list, write: if false;
+    }
+    match /payouts/{id} {
+      allow read: if owner(resource.data.driverId) || admin();
+      allow write: if false;
+      match /audit/{eventId} { allow read: if admin(); allow write: if false; }
+    }
+    match /disputes/{id} {
+      allow read: if owner(resource.data.claimantId) || owner(resource.data.get('targetDriverId', '')) || staff();
+      allow write: if false;
+      match /audit/{eventId} { allow read: if staff(); allow write: if false; }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

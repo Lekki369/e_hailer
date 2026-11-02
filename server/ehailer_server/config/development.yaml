@@ -1,0 +1,18 @@
+apiServer:
+  port: 8787
+  publicHost: localhost
+  publicPort: 8787
+  publicScheme: http
+insightsServer:
+  port: 8788
+  publicHost: localhost
+  publicPort: 8788
+  publicScheme: http
+webServer:
+  port: 8789
+  publicHost: localhost
+  publicPort: 8789
+  publicScheme: http
+maxRequestSize: 65536
+sessionLogs:
+  consoleEnabled: false

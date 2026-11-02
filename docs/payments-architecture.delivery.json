@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f7f64ae6-08d3-43a1-b4bc-4b3ff1af6a64",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/payments-architecture.json",
+  "output": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/payments-architecture.html",
+  "specification": {
+    "sha256": "38b1eb3ec0636631ec330c1e15b81492e0c6b91e7ea47656d5c17cabe244ed05",
+    "bytes": 6708
+  },
+  "artifact": {
+    "sha256": "94dfcf2082448fa3ec6c9c20c8bf7ee8319fce8430a8ef9f7b877659116df4c8",
+    "bytes": 844320
+  }
+}

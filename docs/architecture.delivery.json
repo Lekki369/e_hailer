@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7c67471a-916f-4476-a3af-a9da7a51008d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/architecture.json",
+  "output": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/architecture.html",
+  "specification": {
+    "sha256": "53a9f4496a9cfa2e8fed678353579615ace4d5b1017d608265c25c6b65e5e5d1",
+    "bytes": 7206
+  },
+  "artifact": {
+    "sha256": "8d15e6568f2e3f50470017e91610a2a3470c8ee34db5cf5da9b2c280255968d3",
+    "bytes": 848104
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "description": "Local implementation source snapshot; not a deployed or upstream revision.",
+  "base_revision": "6887e75222600dd1b9cda1e59ef63a89106a69e2",
+  "snapshot_revision": "f71a2527012cd01da9b5b98490c7fa84dad767aa",
+  "snapshot_path": ".cache/architecture-source",
+  "sha256": {
+    "lib/core/infrastructure/operations_api.dart": "5eb70c3ef57223dbd2c50418eda9c3a1a80f72a75802f958fa38d8264902d376",
+    "lib/features/wallet/infrastructure/wallet_payment_service.dart": "b198ebf90d7e82a731a31548b67586190a9cdfa56433853a536ccb025d8366cd",
+    "lib/features/wallet/presentation/widgets/wallet_top_up_dialog.dart": "7c152479a788f520b4e0c86ea3fbd4003a62475302c50e9c85554206619fd864",
+    "server/ehailer_server/lib/server.dart": "9324a104fe91059932f055476a7a55b0dadc3867e7f0a71483c496730e9f95d9",
+    "server/ehailer_server/lib/src/core/infrastructure/firestore_command_store.dart": "d9cd20277264e1fc7f3f0ba51e627fba7a2b5e6e246f5281369f343f566f2ff3",
+    "server/ehailer_server/lib/src/core/infrastructure/runtime_environment.dart": "d5257ff26caecc2b4b91af0379c9d946b4cd47d129c0647b1b9a13f117589fa4",
+    "server/ehailer_server/lib/src/features/operations/endpoints/operations_endpoint.dart": "c1647d22f04413d36dbe1625f83fe0d0dcabcb8d7e9f2dc396293d4b790f6a6b",
+    "server/ehailer_server/lib/src/features/payments/domain/payment_service.dart": "99d6386bdb98e98d5e6e1e8451ea042cb94f350ea9f28725194baf4b7b8aa524",
+    "server/ehailer_server/lib/src/features/payments/endpoints/paystack_webhook_route.dart": "6ab04ecf8278650c620f241250bbdbfe85890b0ef9612f29af002242463f26ad",
+    "server/ehailer_server/lib/src/features/payments/infrastructure/paystack_gateway.dart": "1166a82aba10ec11700245e998c99570c2b89e15c236084d35ff5128e7125eda"
+  }
+}

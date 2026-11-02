@@ -1,0 +1,20 @@
+# TLS terminates at the ingress. Override both public hosts at deployment.
+# Never expose the insights listener through the public ingress.
+apiServer:
+  port: 8787
+  publicHost: localhost
+  publicPort: 443
+  publicScheme: https
+insightsServer:
+  port: 8788
+  publicHost: localhost
+  publicPort: 8788
+  publicScheme: http
+webServer:
+  port: 8789
+  publicHost: localhost
+  publicPort: 443
+  publicScheme: https
+maxRequestSize: 65536
+sessionLogs:
+  consoleEnabled: false

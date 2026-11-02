@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/payments-architecture.json",
+    "sha256": "38b1eb3ec0636631ec330c1e15b81492e0c6b91e7ea47656d5c17cabe244ed05",
+    "bytes": 6708
+  },
+  "artifact": {
+    "path": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/payments-architecture.html",
+    "sha256": "94dfcf2082448fa3ec6c9c20c8bf7ee8319fce8430a8ef9f7b877659116df4c8",
+    "bytes": 844320
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-payments/payments-architecture.finalize.json",
+    "summaryReceipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-payments/payments-architecture.finalize-summary.json",
+    "browserCheckReceipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-payments/payments-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-02T14:52:16.366Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 27287,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

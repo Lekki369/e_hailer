@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "e-Hailer delivery commands and read boundaries",
+    "locale": "en",
+    "output": "docs/architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Lekki369/e_hailer.git",
+      "revision": "f71a2527012cd01da9b5b98490c7fa84dad767aa",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Signed-in Flutter app",
+      "sublabel": "Customer / courier / staff",
+      "pos": [
+        40,
+        250
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "lib/core/infrastructure/operations_api.dart",
+          "line": 40,
+          "end_line": 159
+        },
+        {
+          "path": "lib/features/delivery/infrastructure/delivery_remote_service.dart",
+          "line": 46,
+          "end_line": 126
+        },
+        {
+          "path": "lib/features/auth/infrastructure/auth_remote_service.dart",
+          "line": 35,
+          "end_line": 52
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Firebase Authentication",
+      "sublabel": "Identity and token revocation",
+      "pos": [
+        455,
+        40
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/server.dart",
+          "line": 49,
+          "end_line": 58
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Serverpod API",
+      "sublabel": "Verified UID required",
+      "pos": [
+        455,
+        250
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/server.dart",
+          "line": 49,
+          "end_line": 67
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/endpoints/operations_endpoint.dart",
+          "line": 8,
+          "end_line": 73
+        }
+      ]
+    },
+    {
+      "id": "commands",
+      "type": "backend",
+      "label": "Trusted commands",
+      "sublabel": "Role / state / PIN / receipts",
+      "pos": [
+        870,
+        250
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/domain/operations_service.dart",
+          "line": 26,
+          "end_line": 183
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/domain/delivery_commands.dart",
+          "line": 3,
+          "end_line": 55
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/domain/delivery_commands.dart",
+          "line": 145,
+          "end_line": 264
+        }
+      ]
+    },
+    {
+      "id": "roads",
+      "type": "external",
+      "label": "OSRM road routing",
+      "sublabel": "Distance and duration for quotes",
+      "pos": [
+        870,
+        40
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/features/map/infrastructure/osrm_route_service.dart",
+          "line": 7,
+          "end_line": 54
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Cloud Firestore",
+      "sublabel": "Orders, ledger and projections",
+      "pos": [
+        870,
+        510
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "server/ehailer_server/lib/src/core/infrastructure/firestore_command_store.dart",
+          "line": 5,
+          "end_line": 33
+        },
+        {
+          "path": "server/ehailer_server/lib/src/features/operations/domain/operations_service.dart",
+          "line": 249,
+          "end_line": 317
+        }
+      ]
+    },
+    {
+      "id": "rules",
+      "type": "security",
+      "label": "Firestore read policy",
+      "sublabel": "Rules gate client reads",
+      "pos": [
+        455,
+        510
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "firestore.rules",
+          "line": 1,
+          "end_line": 75
+        }
+      ]
+    },
+    {
+      "id": "public",
+      "type": "frontend",
+      "label": "Public tracking viewer",
+      "sublabel": "Redacted status and milestones",
+      "pos": [
+        40,
+        510
+      ],
+      "size": [
+        220,
+        84
+      ],
+      "sources": [
+        {
+          "path": "lib/features/delivery/infrastructure/delivery_remote_service.dart",
+          "line": 89,
+          "end_line": 117
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "sign-in",
+      "from": "app",
+      "to": "auth",
+      "label": "Sign in",
+      "variant": "security"
+    },
+    {
+      "id": "authenticated-command",
+      "from": "app",
+      "to": "api",
+      "label": "Token + RPC",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify-token",
+      "from": "api",
+      "to": "auth",
+      "label": "Verify + revocation",
+      "variant": "security"
+    },
+    {
+      "id": "trusted-identity",
+      "from": "api",
+      "to": "commands",
+      "label": "Execute as UID",
+      "variant": "emphasis"
+    },
+    {
+      "id": "route-quote",
+      "from": "commands",
+      "to": "roads",
+      "label": "Quote road route",
+      "variant": "default"
+    },
+    {
+      "id": "transaction",
+      "from": "commands",
+      "to": "store",
+      "label": "Atomic writes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "subscriptions",
+      "from": "app",
+      "to": "rules",
+      "label": "Authorized streams",
+      "variant": "security"
+    },
+    {
+      "id": "read-policy",
+      "from": "rules",
+      "to": "store",
+      "label": "Allowed reads",
+      "variant": "security"
+    },
+    {
+      "id": "tracking-lookup",
+      "from": "public",
+      "to": "rules",
+      "label": "Unexpired token get",
+      "variant": "security"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Trusted Dart service",
+      "wraps": [
+        "api",
+        "commands"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Booking and money",
+      "items": [
+        "A quote binds customer, inputs and a ten-minute expiry.",
+        "Single-use quotes and command receipts protect retries.",
+        "Completion checks the private PIN before ledger settlement."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Read boundaries",
+      "items": [
+        "The policy node represents Firestore Rules, not a network proxy.",
+        "Only the customer can read the private delivery PIN.",
+        "Public lookups exclude contacts, coordinates, money and PINs."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Local implementation snapshot",
+      "items": [
+        "Sources pin an isolated local Git snapshot of changed files.",
+        "This is implemented code, not evidence of production deployment.",
+        "Paystack funding has a separate diagram; bank transfers remain manual."
+      ]
+    }
+  ]
+}

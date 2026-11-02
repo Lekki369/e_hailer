@@ -1,0 +1,18 @@
+{
+  "description": "Local implementation source snapshot; not a deployed or upstream revision.",
+  "base_revision": "6887e75222600dd1b9cda1e59ef63a89106a69e2",
+  "snapshot_revision": "f71a2527012cd01da9b5b98490c7fa84dad767aa",
+  "snapshot_path": ".cache/architecture-source",
+  "sha256": {
+    "firestore.rules": "a697b73e06a1f195fb0c5a07daf5f7c89b8557bb8c7608397636a1a1ea79773e",
+    "lib/core/infrastructure/operations_api.dart": "5eb70c3ef57223dbd2c50418eda9c3a1a80f72a75802f958fa38d8264902d376",
+    "lib/features/auth/infrastructure/auth_remote_service.dart": "4bf08032f03c917cb7f8f6967215df09fd926b1c71c5e57f95d44ceb84ef27d8",
+    "lib/features/delivery/infrastructure/delivery_remote_service.dart": "346458ced0060a2006bbd52614cdc9b9d611276fa53da568307eb35d9e693a34",
+    "server/ehailer_server/lib/server.dart": "9324a104fe91059932f055476a7a55b0dadc3867e7f0a71483c496730e9f95d9",
+    "server/ehailer_server/lib/src/core/infrastructure/firestore_command_store.dart": "d9cd20277264e1fc7f3f0ba51e627fba7a2b5e6e246f5281369f343f566f2ff3",
+    "server/ehailer_server/lib/src/features/map/infrastructure/osrm_route_service.dart": "1f57f5ba89849a720e07205c505ca7eb8d37fbcdbedac42a03b6e3e9b2413580",
+    "server/ehailer_server/lib/src/features/operations/domain/delivery_commands.dart": "591cf9ef9cd832f75b976d00ae6235f788bf0320b477fa23d8319702f9ad856b",
+    "server/ehailer_server/lib/src/features/operations/domain/operations_service.dart": "f163fecdd0e3d60fdc7521bdd518c6f441a5672c140db947ea391767a4235f7c",
+    "server/ehailer_server/lib/src/features/operations/endpoints/operations_endpoint.dart": "c1647d22f04413d36dbe1625f83fe0d0dcabcb8d7e9f2dc396293d4b790f6a6b"
+  }
+}

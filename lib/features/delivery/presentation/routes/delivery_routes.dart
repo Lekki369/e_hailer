@@ -1,0 +1,175 @@
+import 'package:go_router/go_router.dart';
+
+import '../screens/active_delivery_screen.dart';
+import '../screens/consignment_creation_screen.dart';
+import '../screens/customer_home_screen.dart';
+import '../screens/driver_dashboard_screen.dart';
+import '../screens/express_booking_screen.dart';
+import '../screens/order_tracking_screen.dart';
+import '../screens/public_tracking_screen.dart';
+
+/// Screen-level route definition for Customer Home
+abstract class CustomerHomeRoute {
+  static const String path = '/home';
+  static const String name = 'home';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) => const CustomerHomeScreen(),
+  );
+}
+
+/// Screen-level route definition for Driver Dashboard
+abstract class DriverDashboardRoute {
+  static const String path = '/driver';
+  static const String name = 'driver';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) => const DriverDashboardScreen(),
+  );
+}
+
+/// Screen-level route definition for Active Delivery Terminal
+abstract class ActiveDeliveryRoute {
+  static const String path = '/driver/active-delivery/:orderId';
+  static const String name = 'active-delivery';
+
+  /// Helper to build parameterized path
+  static String pathWithId(String orderId) =>
+      '/driver/active-delivery/$orderId';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) {
+      final orderId = state.pathParameters['orderId'] ?? '';
+      return ActiveDeliveryScreen(orderId: orderId);
+    },
+  );
+}
+
+/// Screen-level route definition for Express Booking
+abstract class ExpressBookingRoute {
+  static const String path = '/express-booking';
+  static const String name = 'express-booking';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) => const ExpressBookingScreen(),
+  );
+}
+
+/// Screen-level route definition for Consignment Creation
+abstract class ConsignmentCreationRoute {
+  static const String path = '/consignment-creation';
+  static const String name = 'consignment-creation';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) => const ConsignmentCreationScreen(),
+  );
+}
+
+/// Screen-level route definition for Order Tracking
+abstract class OrderTrackingRoute {
+  static const String path = '/tracking/:orderId';
+  static const String name = 'tracking';
+
+  /// Helper to build parameterized path
+  static String pathWithId(String orderId) => '/tracking/$orderId';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) {
+      final orderId = state.pathParameters['orderId'] ?? '';
+      return OrderTrackingScreen(orderId: orderId);
+    },
+  );
+}
+
+/// Screen-level route definition for Public Tracking Portal (Consignment & Waybills)
+abstract class PublicTrackingRoute {
+  static const String path = '/track';
+  static const String name = 'public-tracking';
+  static const String paramName = 'public-tracking-detail';
+
+  /// Helper to build parameterized public tracking URL
+  static String pathWithNumber(String trackingNumber) =>
+      '/track/$trackingNumber';
+
+  static GoRoute get route => GoRoute(
+    path: path,
+    name: name,
+    builder: (context, state) => const PublicTrackingScreen(),
+    routes: [
+      GoRoute(
+        path: ':trackingNumber',
+        name: paramName,
+        builder: (context, state) {
+          final trackingNumber = state.pathParameters['trackingNumber'] ?? '';
+          return PublicTrackingScreen(initialTrackingNumber: trackingNumber);
+        },
+      ),
+    ],
+  );
+}
+
+/// Feature-level route bundle for Deliveries & Logistics
+abstract class DeliveryRoutes {
+  // Path & Name References
+  static const String customerHomePath = CustomerHomeRoute.path;
+  static const String customerHomeName = CustomerHomeRoute.name;
+
+  static const String driverDashboardPath = DriverDashboardRoute.path;
+  static const String driverDashboardName = DriverDashboardRoute.name;
+
+  static const String activeDeliveryPath = ActiveDeliveryRoute.path;
+  static const String activeDeliveryName = ActiveDeliveryRoute.name;
+
+  static String activeDelivery(String orderId) =>
+      ActiveDeliveryRoute.pathWithId(orderId);
+
+  static const String expressBookingPath = ExpressBookingRoute.path;
+  static const String expressBookingName = ExpressBookingRoute.name;
+
+  static const String consignmentCreationPath = ConsignmentCreationRoute.path;
+  static const String consignmentCreationName = ConsignmentCreationRoute.name;
+
+  static const String orderTrackingPath = OrderTrackingRoute.path;
+  static const String orderTrackingName = OrderTrackingRoute.name;
+
+  static String orderTracking(String orderId) =>
+      OrderTrackingRoute.pathWithId(orderId);
+
+  static const String publicTrackingPath = PublicTrackingRoute.path;
+  static const String publicTrackingName = PublicTrackingRoute.name;
+
+  static String publicTracking(String trackingNumber) =>
+      PublicTrackingRoute.pathWithNumber(trackingNumber);
+
+  // Screen GoRoutes
+  static GoRoute get customerHomeRoute => CustomerHomeRoute.route;
+  static GoRoute get driverDashboardRoute => DriverDashboardRoute.route;
+  static GoRoute get activeDeliveryRoute => ActiveDeliveryRoute.route;
+  static GoRoute get expressBookingRoute => ExpressBookingRoute.route;
+  static GoRoute get consignmentCreationRoute => ConsignmentCreationRoute.route;
+  static GoRoute get orderTrackingRoute => OrderTrackingRoute.route;
+  static GoRoute get publicTrackingRoute => PublicTrackingRoute.route;
+
+  /// All GoRoutes registered by the Delivery feature
+  static List<GoRoute> get routes => [
+    CustomerHomeRoute.route,
+    DriverDashboardRoute.route,
+    ActiveDeliveryRoute.route,
+    ExpressBookingRoute.route,
+    ConsignmentCreationRoute.route,
+    OrderTrackingRoute.route,
+    PublicTrackingRoute.route,
+  ];
+}

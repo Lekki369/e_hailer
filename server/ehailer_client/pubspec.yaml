@@ -1,0 +1,11 @@
+name: ehailer_client
+description: Generated Serverpod API contract for e-Hailer.
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: ^3.12.2
+dependencies:
+  serverpod_client: 4.1.0
+  http: ^1.6.0
+dev_dependencies:
+  lints: ^6.1.0

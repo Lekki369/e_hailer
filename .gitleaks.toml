@@ -1,0 +1,11 @@
+title = "e-Hailer public repository credential checks"
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SHA-256 source integrity digests in generated evidence only"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^graphify-out/manifest\.json$''', '''^docs/(?:payments-)?architecture-evidence\.json$''']
+regexTarget = "secret"
+regexes = ['''^[a-f0-9]{64}$''']

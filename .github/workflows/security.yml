@@ -1,0 +1,23 @@
+name: Security checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  public-repository:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject private configuration and credentials in the tracked snapshot
+        run: python3 tool/check_secrets.py --staged
+      - name: Exercise configuration and worker security boundaries
+        run: |
+          python3 -m unittest discover -s tool/tests -v
+          node --test tool/web_tests/firebase_worker.test.js
+      - name: Install checksum-verified secret scanner
+        run: python3 tool/install_gitleaks.py
+      - name: Scan the complete public Git history
+        run: .cache/security-tools/gitleaks git . --log-opts=--all --redact --no-banner

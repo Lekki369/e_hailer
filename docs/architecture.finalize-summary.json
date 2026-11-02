@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/architecture.json",
+    "sha256": "53a9f4496a9cfa2e8fed678353579615ace4d5b1017d608265c25c6b65e5e5d1",
+    "bytes": 7206
+  },
+  "artifact": {
+    "path": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/docs/architecture.html",
+    "sha256": "8d15e6568f2e3f50470017e91610a2a3470c8ee34db5cf5da9b2c280255968d3",
+    "bytes": 848104
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-overview/architecture.finalize.json",
+    "summaryReceipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-overview/architecture.finalize-summary.json",
+    "browserCheckReceipt": "/Users/olamilekanawomewe/Desktop/FLUTTER PROJECTS/e_hailer/.cache/architecture-security-overview/architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-02T14:52:16.366Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 38272,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "authenticated-command",
+            "from": "app",
+            "to": "api",
+            "label": "Token + RPC",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "bends": 3,
+          "stretch": 1.145
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "app → api needs 3 bends: move node app or api so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}
