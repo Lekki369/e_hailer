@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 import '../../../core/domain/operation_failure.dart';
+import '../../../core/domain/command_rate_limiter.dart';
 import '../../../generated/protocol.dart';
 import '../domain/operations_service.dart';
 import '../../payments/domain/payment_service.dart';
@@ -8,6 +9,7 @@ import '../../payments/domain/payment_service.dart';
 class OperationsEndpoint extends Endpoint {
   static late OperationsService service;
   static PaymentService? payments;
+  static late CommandRateLimiter rateLimiter;
   @override
   bool get requireLogin => true;
 
@@ -26,6 +28,11 @@ class OperationsEndpoint extends Endpoint {
           errorMessage: 'Please sign in again.',
         );
       }
+      await rateLimiter.consume(identity.userIdentifier, command);
+      requireCondition(
+        payload.length <= 32768 && command.length <= 80,
+        'Request is too large.',
+      );
       final decoded = jsonDecode(payload);
       requireCondition(decoded is Map<String, dynamic>, 'Invalid request.');
       if (PaymentService.commands.contains(command) && payments == null) {

@@ -4,18 +4,20 @@ Firebase UID is the identity key. Unless listed as editable below, client writes
 
 | Path | Purpose | Client access |
 | --- | --- | --- |
-| `users/{uid}` | Role, contact profile, wallet balance, vehicle, availability, rating, active order IDs | Own get; staff reads/lists. Self-create customer/driver with zero balance. Own contact, vehicle/availability and messaging registration edits only. |
+| `users/{uid}` | Role, contact profile, wallet balance, vehicle, availability, rating, active order IDs | Own get; staff reads/lists. Self-create customer/driver with zero balance. Own contact/messaging edits; availability requires driver approval, and approved vehicles are locked. Approval and operating areas are server-owned. |
 | `users/{uid}/transactions/{id}` | Positive amount plus explicit credit/debit transaction type and reference | Owner or administrator read; server writes only. |
 | `deliveryQuotes/{id}` | Customer, input hash, authoritative route/fare, expiry, consumed order ID | Server only. |
 | `deliveries/{id}` | Participant contacts, locations, parcel, pricing, lifecycle, settlement and cumulative refund amount | Owner, assigned driver or staff read. |
 | `deliveries/{id}/timeline/{eventId}` | Immutable milestone, authenticated actor, role and timestamp | Same authorized readers as order. |
 | `deliveryPins/{orderId}` | Customer UID, random four-digit PIN, attempt count and lock expiry | Owner get only; no list; no driver/staff access. Deleted on terminal handover/cancellation/return. |
-| `jobOffers/{orderId}` | Available-job projection with route coordinates and parcel/fare; no contact identity or PIN | Authenticated drivers read. Deleted on assignment/closure. |
+| `jobOffers/{orderId}` | Available-job projection with coarse area centres and fare; no exact addresses, contacts, parcel notes, tracking token or PIN | Approved online drivers read only matching vehicle/pickup areas; list limit 30. Deleted on assignment/closure. |
 | `publicTracking/{randomToken}` | Allowlisted status, type, vehicle, estimated duration, timestamps and bounded timeline | One unexpired document lookup without sign-in. Lists/writes denied. |
 | `payouts/{id}` | Reserved withdrawal, bank details, pending/settled/rejected state and transfer reference | Requesting driver or administrator read. |
 | `payouts/{id}/audit/{eventId}` | Administrator action and processing metadata | Administrator read. |
 | `disputes/{id}` | Claimant, order, category, description, assignment and resolution | Claimant, target driver or staff read. |
 | `disputes/{id}/audit/{eventId}` | Trusted actor/action/timestamp | Staff read. |
+| `apiQuotas/{uidDigest}` | Durable per-account API token buckets | Server only. |
+| `driverApprovalAudit/{eventId}` | Administrator approval/revocation, driver, permitted areas and time | Server only. |
 | `commandReceipts/{hash}` | UID, command, canonical request hash, result and commit timestamp | Server only. |
 | `paymentIntents/{reference}` | UID, email snapshot, integer amount, NGN currency, test/live mode, initialization lease, checkout URL and verification status | Server only; owner receives an allowlisted view through the API. |
 | `paymentSettlements/paystack-{mode}-{transactionId}` | Unique provider transaction receipt, reference, UID and amount | Server only; prevents reuse across top-ups. |
@@ -35,7 +37,7 @@ Payment intents retain only the fields needed for verification and recovery. Car
 
 ## Retention and indexing
 
-Public projections expire for reads after thirty days from the most recent published milestone. Expiry denies access; it does **not** delete the document. Configure and test retention jobs/TTL separately. Do not purge command receipts without a documented idempotency retention policy. Current participant queries use single-field filters; sorting small result sets occurs client-side. Large operational datasets need pagination and server-side aggregates before launch.
+Public projections expire for reads after thirty days from the most recent published milestone. Expiry denies access; it does **not** delete the document. Configure and test retention jobs/TTL separately. Do not purge command receipts without a documented idempotency retention policy. Offer queries filter by vehicle and permitted service-area IDs, using the composite index in `firestore.indexes.json`. Current participant queries use single-field filters; sorting small result sets occurs client-side. Large operational datasets need pagination and server-side aggregates before launch.
 
 ## Existing data migration
 
@@ -48,3 +50,5 @@ Older orders may contain `recipientSecurityOtp` inside the readable order docume
 5. Rebuild allowlisted job/public projections, test on a staging copy, and deploy coordinated client/API/rules changes.
 
 No live inventory, migration or deployment has been performed by this change.
+
+Driver profile fields `driverApproved`, `serviceAreaIds`, `serviceAreaName`, `approvalUpdatedAt` and `approvalUpdatedBy` are managed by the trusted approval command. Missing approval/areas deny new-job access. See [driver access and abuse controls](DRIVER_ACCESS_AND_ABUSE_CONTROLS.md).

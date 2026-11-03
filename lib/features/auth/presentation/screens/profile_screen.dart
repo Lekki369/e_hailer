@@ -265,8 +265,10 @@ class ProfileScreen extends HookConsumerWidget {
                         ).textTheme.titleLarge?.copyWith(fontSize: 17),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Select the vehicle category you operate to receive matching delivery requests.',
+                      Text(
+                        user.driverApproved == true
+                            ? 'Your approved vehicle is locked. Ask an administrator to revoke approval before changing it, then request approval again.'
+                            : 'Select the vehicle category you operate. An administrator must approve your vehicle and operating area before you receive jobs.',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -291,7 +293,9 @@ class ProfileScreen extends HookConsumerWidget {
                               children: VehicleType.values.map((vehicle) {
                                 return ChoiceChip(
                                   selected: selectedVehicle.value == vehicle,
-                                  onSelected: isSaving.value
+                                  onSelected:
+                                      isSaving.value ||
+                                          user.driverApproved == true
                                       ? null
                                       : (_) => selectedVehicle.value = vehicle,
                                   avatar: Icon(
@@ -312,6 +316,7 @@ class ProfileScreen extends HookConsumerWidget {
 
                             TextField(
                               controller: plateController,
+                              enabled: user.driverApproved != true,
                               textCapitalization: TextCapitalization.characters,
                               decoration: const InputDecoration(
                                 labelText: 'Plate Number (e.g. LAG-421XY)',
@@ -325,6 +330,7 @@ class ProfileScreen extends HookConsumerWidget {
 
                             TextField(
                               controller: modelController,
+                              enabled: user.driverApproved != true,
                               decoration: const InputDecoration(
                                 labelText:
                                     'Make & Model (e.g. Bajaj Boxer 150)',
@@ -343,7 +349,9 @@ class ProfileScreen extends HookConsumerWidget {
                                     vertical: 14,
                                   ),
                                 ),
-                                onPressed: isSaving.value
+                                onPressed:
+                                    isSaving.value ||
+                                        user.driverApproved == true
                                     ? null
                                     : () async {
                                         final plate = plateController.text

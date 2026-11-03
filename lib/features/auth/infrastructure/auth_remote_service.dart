@@ -97,7 +97,7 @@ class AuthRemoteService {
         phone: phone.trim(),
         walletBalance: 0.0,
         rating: 5.0,
-        isAvailable: role == UserRole.driver,
+        isAvailable: false,
         vehicleType: role == UserRole.driver
             ? (vehicleType ?? VehicleType.bike)
             : null,

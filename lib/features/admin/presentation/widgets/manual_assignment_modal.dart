@@ -264,17 +264,27 @@ class _ManualAssignmentModalState extends ConsumerState<ManualAssignmentModal> {
                 }
 
                 // Sort: Online available drivers first, then by closest distance
-                final sorted = List<FleetDriverSummary>.from(drivers)
-                  ..sort((a, b) {
-                    if (a.isAvailable && !b.isAvailable) return -1;
-                    if (!a.isAvailable && b.isAvailable) return 1;
+                final sorted =
+                    drivers
+                        .where(
+                          (d) =>
+                              d.driverApproved &&
+                              d.isAvailable &&
+                              widget.orders.every(
+                                (o) => o.vehicleType == d.vehicleType,
+                              ),
+                        )
+                        .toList()
+                      ..sort((a, b) {
+                        if (a.isAvailable && !b.isAvailable) return -1;
+                        if (!a.isAvailable && b.isAvailable) return 1;
 
-                    final distA = getDriverDistance(a);
-                    final distB = getDriverDistance(b);
-                    if (distA != distB) return distA.compareTo(distB);
+                        final distA = getDriverDistance(a);
+                        final distB = getDriverDistance(b);
+                        if (distA != distB) return distA.compareTo(distB);
 
-                    return a.fullName.compareTo(b.fullName);
-                  });
+                        return a.fullName.compareTo(b.fullName);
+                      });
 
                 return ListView.separated(
                   shrinkWrap: true,

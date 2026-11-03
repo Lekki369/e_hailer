@@ -72,6 +72,11 @@ Future<Json> _updateDelivery(_CommandContext c, String command) async {
     case 'acceptJob':
       c.allowRoles({'driver'});
       requireCondition(
+        DriverAccessPolicy.eligible(c.actor, order),
+        'You need approval for this vehicle and pickup area.',
+        'permission-denied',
+      );
+      requireCondition(
         c.actor['isAvailable'] == true &&
             _CommandContext.activeIds(c.actor).isEmpty,
         'Go online and finish your current delivery first.',
@@ -321,7 +326,9 @@ Future<Json> _assignOrders(_CommandContext c) async {
   final target = identifier(c.input['driverId']);
   final driver = existing(await c.tx.get('users/$target'));
   requireCondition(
-    driver['role'] == 'driver' && driver['isAvailable'] == true,
+    driver['role'] == 'driver' &&
+        driver['driverApproved'] == true &&
+        driver['isAvailable'] == true,
     'Choose an online courier.',
   );
   requireCondition(
@@ -344,8 +351,9 @@ Future<Json> _assignOrders(_CommandContext c) async {
       'invalid-transition',
     );
     requireCondition(
-      order['vehicleType'] == driver['vehicleType'],
-      'The vehicle must match every delivery.',
+      DriverAccessPolicy.eligible(driver, order),
+      'The driver must be approved for every vehicle and pickup area.',
+      'permission-denied',
     );
     orders.add(order);
     publications.add(
@@ -378,6 +386,60 @@ Future<Json> _assignOrders(_CommandContext c) async {
   c.tx.update('users/$target', {
     'currentOrderId': ids.first,
     'activeOrderIds': ids,
+  });
+  return {};
+}
+
+Future<Json> _setDriverApproval(_CommandContext c) async {
+  c.allowRoles({'admin'});
+  final target = identifier(c.input['driverId']);
+  final driver = existing(await c.tx.get('users/$target'));
+  requireCondition(driver['role'] == 'driver', 'Choose a driver account.');
+  requireCondition(c.input['approved'] is bool, 'Choose an approval status.');
+  final approved = c.input['approved'] == true;
+  requireCondition(
+    _CommandContext.activeIds(driver).isEmpty,
+    'Reassign or finish active deliveries before changing approval.',
+    'conflict',
+  );
+  final areas = <String>[];
+  String? label;
+  if (approved) {
+    requiredText(driver['vehiclePlateNumber'], 'Driver plate number', 20);
+    requiredText(driver['vehicleModel'], 'Driver vehicle model', 50);
+    requireCondition(
+      {'bike', 'car', 'van', 'truck'}.contains(driver['vehicleType']),
+      'The driver must first select a vehicle.',
+    );
+    final lat = finiteNumber(
+      c.input['latitude'],
+      -89.8,
+      89.8,
+      'service area latitude',
+    );
+    final lng = finiteNumber(
+      c.input['longitude'],
+      -179.8,
+      179.8,
+      'service area longitude',
+    );
+    label = requiredText(c.input['areaName'], 'Operating area', 120);
+    areas.addAll(DriverAccessPolicy.areas(lat, lng));
+  }
+  c.tx.update('users/$target', {
+    'driverApproved': approved,
+    'serviceAreaIds': areas,
+    'serviceAreaName': label,
+    'isAvailable': false,
+    'approvalUpdatedAt': c.timestamp,
+    'approvalUpdatedBy': c.uid,
+  });
+  c.tx.create('driverApprovalAudit/${c.eventId}', {
+    'driverId': target,
+    'approved': approved,
+    'serviceAreaIds': areas,
+    'actorId': c.uid,
+    'createdAt': c.timestamp,
   });
   return {};
 }

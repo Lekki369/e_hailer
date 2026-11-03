@@ -14,6 +14,9 @@ void main() {
         vehiclePlateNumber: 'KJA-123-XY',
         vehicleModel: 'Honda Ace 125',
         isAvailable: true,
+        driverApproved: true,
+        serviceAreaIds: const ['65:33'],
+        serviceAreaName: 'Test operating area',
         rating: 4.8,
         currentOrderId: 'ord-999',
         lastKnownLatitude: 6.5244,
@@ -30,6 +33,9 @@ void main() {
       expect(replica.vehicleType, equals(VehicleType.bike));
       expect(replica.vehiclePlateNumber, equals('KJA-123-XY'));
       expect(replica.isAvailable, isTrue);
+      expect(replica.driverApproved, isTrue);
+      expect(replica.serviceAreaIds, ['65:33']);
+      expect(replica.serviceAreaName, 'Test operating area');
       expect(replica.rating, equals(4.8));
       expect(replica.currentOrderId, equals('ord-999'));
       expect(replica.lastKnownLatitude, equals(6.5244));

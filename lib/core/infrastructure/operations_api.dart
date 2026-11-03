@@ -103,7 +103,9 @@ class OperationsApi {
       }
       final reply = await caller(command, payload, key).timeout(timeout);
       if (reply.errorCode != null) {
-        if (reply.errorCode != 'unavailable') _pendingKeys.remove(fingerprint);
+        if (!{'unavailable', 'resource-exhausted'}.contains(reply.errorCode)) {
+          _pendingKeys.remove(fingerprint);
+        }
         return left(_failure(reply));
       }
       final decoded = jsonDecode(reply.dataJson);

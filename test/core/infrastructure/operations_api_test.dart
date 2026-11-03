@@ -78,9 +78,16 @@ void main() {
           if (keys.length == 2) {
             return CommandReply(dataJson: '{}', errorCode: 'unavailable');
           }
+          if (keys.length == 3) {
+            return CommandReply(
+              dataJson: '{}',
+              errorCode: 'resource-exhausted',
+            );
+          }
           return CommandReply(dataJson: '{}');
         },
       );
+      await api.execute('submitPayout', {'amount': 100});
       await api.execute('submitPayout', {'amount': 100});
       await api.execute('submitPayout', {'amount': 100});
       await api.execute('submitPayout', {'amount': 100});

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
 import 'package:http/http.dart' as http;
 import 'src/core/infrastructure/firestore_command_store.dart';
+import 'src/core/domain/command_rate_limiter.dart';
 import 'src/core/infrastructure/health_route.dart';
 import 'src/core/infrastructure/runtime_environment.dart';
 import 'src/features/payments/domain/payment_service.dart';
@@ -25,6 +26,7 @@ Future<void> run(List<String> args) async {
     baseUrl: env['OSRM_BASE_URL'] ?? 'https://router.project-osrm.org',
   );
   final store = FirestoreCommandStore(admin.firestore());
+  OperationsEndpoint.rateLimiter = CommandRateLimiter(store);
   OperationsEndpoint.service = OperationsService(
     store: store,
     routeLookup: routeService.lookup,

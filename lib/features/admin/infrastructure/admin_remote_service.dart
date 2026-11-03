@@ -53,6 +53,22 @@ class AdminRemoteService {
             result.map((orders) => summarizeDispatch(orders, DateTime.now())),
       );
 
+  Future<Either<AppFailure, Unit>> setDriverApproval({
+    required String driverId,
+    required bool approved,
+    double? latitude,
+    double? longitude,
+    String? areaName,
+  }) async => (await _api.execute('setDriverApproval', {
+    'driverId': driverId,
+    'approved': approved,
+    if (approved) ...{
+      'latitude': latitude,
+      'longitude': longitude,
+      'areaName': areaName,
+    },
+  })).map((_) => unit);
+
   /// Manually assign a driver to an order from the dispatch console.
   Future<Either<AppFailure, Unit>> assignDriverToOrder({
     required String orderId,

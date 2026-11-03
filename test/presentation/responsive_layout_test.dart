@@ -23,6 +23,8 @@ import 'package:e_hailer/features/delivery/domain/entities/public_delivery_track
 import 'package:e_hailer/features/delivery/domain/value_objects/delivery_status.dart';
 import 'package:e_hailer/features/delivery/domain/value_objects/delivery_type.dart';
 import 'package:e_hailer/features/admin/domain/entities/dispatch_metrics.dart';
+import 'package:e_hailer/features/admin/domain/entities/fleet_driver_summary.dart';
+import 'package:e_hailer/features/admin/presentation/screens/driver_management_screen.dart';
 import 'package:e_hailer/features/admin/presentation/providers/admin_providers.dart';
 import 'package:e_hailer/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:e_hailer/features/wallet/presentation/providers/wallet_providers.dart';
@@ -45,6 +47,7 @@ void main() {
     'customer': const CustomerHomeScreen(),
     'driver': const DriverDashboardScreen(),
     'operations': const AdminDashboardScreen(),
+    'driver-roster': const DriverManagementScreen(),
     'wallet': const WalletScreen(),
     'driver-profile': const ProfileScreen(),
     'support-profile': const ProfileScreen(),
@@ -112,6 +115,27 @@ void main() {
                 availableOrdersStreamProvider.overrideWith(
                   (ref) => Stream.value([]),
                 ),
+                fleetDriversStreamProvider.overrideWith(
+                  (ref) => Stream.value(const [
+                    FleetDriverSummary(
+                      uid: 'pending',
+                      fullName: 'Example Driver Awaiting Review',
+                      phone: '08012345678',
+                      email: 'pending@example.test',
+                      vehiclePlateNumber: 'TEST-123',
+                      vehicleModel: 'Test motorcycle',
+                    ),
+                    FleetDriverSummary(
+                      uid: 'approved',
+                      fullName: 'Example Approved Driver',
+                      phone: '08012345678',
+                      email: 'approved@example.test',
+                      driverApproved: true,
+                      serviceAreaName: 'Test operating area',
+                      serviceAreaIds: ['65:33'],
+                    ),
+                  ]),
+                ),
                 allOrdersStreamProvider.overrideWith((ref) => Stream.value([])),
                 dispatchMetricsStreamProvider.overrideWith(
                   (ref) => Stream.value(const DispatchMetrics()),
@@ -140,6 +164,9 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
+          if (entry.key == 'driver-roster') {
+            expect(find.text('Review and approve'), findsOneWidget);
+          }
           if (entry.key == 'support-profile') {
             expect(find.text(UserRole.support.label), findsOneWidget);
           }

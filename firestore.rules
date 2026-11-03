@@ -22,13 +22,19 @@ service cloud.firestore {
       allow get: if owner(uid) || staff();
       allow list: if staff();
       allow create: if owner(uid) && validProfile(request.resource.data) &&
-        request.resource.data.keys().hasOnly(['uid', 'role', 'fullName', 'email', 'phone', 'avatarUrl', 'walletBalance', 'rating', 'isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel', 'createdAt']) &&
+        request.resource.data.keys().hasOnly(['uid', 'role', 'fullName', 'email', 'phone', 'avatarUrl', 'walletBalance', 'rating', 'isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel', 'createdAt', 'driverApproved', 'serviceAreaIds', 'serviceAreaName']) &&
         request.resource.data.role in ['customer', 'driver'] &&
+        request.resource.data.isAvailable == false &&
+        request.resource.data.get('driverApproved', false) == false &&
+        request.resource.data.get('serviceAreaIds', []) == [] &&
+        request.resource.data.get('serviceAreaName', null) == null &&
         request.resource.data.walletBalance == 0 && request.resource.data.rating == 5 &&
         request.resource.data.avatarUrl == null && request.resource.data.createdAt is string;
       allow update: if owner(uid) && validProfile(request.resource.data) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel', 'fcmRegistrationId', 'fcmTokenUpdatedAt']) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAvailable', 'vehicleType', 'vehiclePlateNumber', 'vehicleModel']) || resource.data.role == 'driver') &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAvailable']) || !request.resource.data.isAvailable || resource.data.get('driverApproved', false) == true) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['vehicleType', 'vehiclePlateNumber', 'vehicleModel']) || resource.data.get('driverApproved', false) == false) &&
         (request.resource.data.get('fcmRegistrationId', null) == null || (request.resource.data.fcmRegistrationId is string && request.resource.data.fcmRegistrationId.size() <= 4096));
       allow delete: if false;
       match /transactions/{id} {
@@ -52,7 +58,14 @@ service cloud.firestore {
       allow list, write: if false;
     }
     match /jobOffers/{id} {
-      allow read: if signedIn() && role() == 'driver';
+      function eligibleOffer() {
+        let driver = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return driver.role == 'driver' && driver.get('driverApproved', false) == true &&
+          driver.isAvailable == true && resource.data.vehicleType == driver.vehicleType &&
+          resource.data.serviceAreaId in driver.get('serviceAreaIds', []);
+      }
+      allow get: if signedIn() && eligibleOffer();
+      allow list: if signedIn() && request.query.limit != null && request.query.limit <= 30 && eligibleOffer();
       allow write: if false;
     }
     // A single redacted lookup using a cryptographically random tracking token.

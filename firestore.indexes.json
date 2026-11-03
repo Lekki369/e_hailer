@@ -1,0 +1,11 @@
+{
+  "indexes": [{
+    "collectionGroup": "jobOffers",
+    "queryScope": "COLLECTION",
+    "fields": [
+      {"fieldPath": "vehicleType", "order": "ASCENDING"},
+      {"fieldPath": "serviceAreaId", "order": "ASCENDING"}
+    ]
+  }],
+  "fieldOverrides": []
+}

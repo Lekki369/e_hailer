@@ -45,7 +45,11 @@ void main() {
     'phone': '08000000000',
     'walletBalance': balance,
     'isAvailable': true,
+    'driverApproved': role == 'driver',
+    'serviceAreaIds': ['65:33', '65:34'],
     'vehicleType': 'bike',
+    'vehiclePlateNumber': 'TEST-123',
+    'vehicleModel': 'Test motorcycle',
   };
   Json booking({String method = 'wallet'}) => {
     'type': 'express',
@@ -112,6 +116,107 @@ void main() {
     await put('users/admin', user('admin', 'admin'));
     await put('users/support', user('support', 'support'));
   });
+
+  test('driver approval is admin-only and scoped to pickup area', () async {
+    final order = await create();
+    await put('users/driver', {
+      ...(await read('users/driver'))!,
+      'driverApproved': false,
+    });
+    for (final actor in ['customer', 'driver', 'support']) {
+      await expectLater(
+        run('setDriverApproval', actor, {
+          'driverId': 'driver',
+          'approved': true,
+          'latitude': 6.52,
+          'longitude': 3.37,
+          'areaName': 'Test area',
+        }),
+        throwsA(failure('permission-denied')),
+      );
+    }
+    await expectLater(
+      run('acceptJob', 'driver', {'orderId': order['id']}),
+      throwsA(failure('permission-denied')),
+    );
+    await run('setDriverApproval', 'admin', {
+      'driverId': 'driver',
+      'approved': true,
+      'latitude': 6.52,
+      'longitude': 3.37,
+      'areaName': 'Test area',
+    });
+    final approved = (await read('users/driver'))!;
+    expect(approved['isAvailable'], false);
+    expect(approved['serviceAreaIds'], contains('65:33'));
+    await put('users/driver', {
+      ...approved,
+      'isAvailable': true,
+      'serviceAreaIds': ['0:0'],
+    });
+    await expectLater(
+      run('acceptJob', 'driver', {'orderId': order['id']}),
+      throwsA(failure('permission-denied')),
+    );
+    await expectLater(
+      run('assignOrders', 'admin', {
+        'orderIds': [order['id']],
+        'driverId': 'driver',
+      }),
+      throwsA(failure('permission-denied')),
+    );
+    await put('users/driver', {...approved, 'isAvailable': true});
+    await run('acceptJob', 'driver', {'orderId': order['id']});
+    await expectLater(
+      run('setDriverApproval', 'admin', {
+        'driverId': 'driver',
+        'approved': false,
+      }),
+      throwsA(failure('conflict')),
+    );
+  });
+
+  test(
+    'revoked drivers cannot accept jobs or receive manual assignments',
+    () async {
+      final order = await create();
+      await run('setDriverApproval', 'admin', {
+        'driverId': 'driver',
+        'approved': false,
+      });
+      expect((await read('users/driver'))!['serviceAreaIds'], isEmpty);
+      await expectLater(
+        run('acceptJob', 'driver', {'orderId': order['id']}),
+        throwsA(failure('permission-denied')),
+      );
+      await expectLater(
+        run('assignOrders', 'admin', {
+          'orderIds': [order['id']],
+          'driverId': 'driver',
+        }),
+        throwsA(isA<OperationFailure>()),
+      );
+    },
+  );
+
+  test(
+    'job previews never disclose customer details or tracking capability',
+    () async {
+      final order = await create();
+      final offer = (await read('jobOffers/${order['id']}'))!;
+      expect(offer.keys, isNot(contains('trackingNumber')));
+      expect(offer.keys, isNot(contains('parcel')));
+      expect(offer.keys, isNot(contains('customerId')));
+      expect(offer['serviceAreaId'], '65:33');
+      expect(offer['pickupLocation']['contactPhone'], '');
+      expect(offer['pickupLocation']['address'], isNot('Pickup'));
+      expect(offer['pickupLocation']['latitude'], isNot(6.52));
+      expect(
+        (await read('deliveries/${order['id']}'))!['pickupLocation']['address'],
+        'Pickup',
+      );
+    },
+  );
 
   test('server prices the route and replay debits only once', () async {
     final request = key();

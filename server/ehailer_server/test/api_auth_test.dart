@@ -155,6 +155,10 @@ void main() {
     fail('Local API did not start: $logs');
   });
   setUp(() async {
+    await admin
+        .firestore()
+        .doc('apiQuotas/${sha256.convert(utf8.encode(uid))}')
+        .delete();
     await admin.firestore().doc('users/$uid').update({
       'walletBalance': 10000,
       'pendingTopUpReference': null,
@@ -173,6 +177,60 @@ void main() {
     await paystack.close(force: true);
     await FirebaseApp.deleteApp(admin);
   });
+  test(
+    'HTTP requests enforce quotas before invalid commands and payment work',
+    () async {
+      final quota = admin.firestore().doc(
+        'apiQuotas/${sha256.convert(utf8.encode(uid))}',
+      );
+      final future = DateTime.now()
+          .add(const Duration(minutes: 1))
+          .millisecondsSinceEpoch;
+      // Seed durable exhausted buckets. Wall-clock HTTP loops refill on a slow
+      // machine; exact burst/refill counts use an injected clock in unit tests.
+      await quota.set({
+        'actions': {'tokens': 0, 'at': future},
+      });
+      final blockedAction = await call(
+        bearer: token,
+        command: 'unknown-new-key',
+      );
+      expect(
+        (jsonDecode(blockedAction.body) as Map)['errorCode'],
+        'resource-exhausted',
+      );
+      final payment = await call(
+        bearer: token,
+        command: 'initializeWalletTopUp',
+        payload: {'amountMinor': 1},
+      );
+      expect(
+        (jsonDecode(payment.body) as Map)['errorCode'],
+        'invalid-argument',
+      );
+      await quota.set({
+        'funding': {'tokens': 0, 'at': future},
+      });
+      final blockedPayment = await call(
+        bearer: token,
+        command: 'initializeWalletTopUp',
+        payload: {'amountMinor': 1},
+      );
+      expect(
+        (jsonDecode(blockedPayment.body) as Map)['errorCode'],
+        'resource-exhausted',
+      );
+      await quota.set({
+        'all': {'tokens': 0, 'at': future},
+      });
+      final blockedRead = await call(bearer: token, command: 'getWalletTopUp');
+      expect(
+        (jsonDecode(blockedRead.body) as Map)['errorCode'],
+        'resource-exhausted',
+      );
+    },
+  );
+
   test(
     'signed webhook and authenticated verification settle a hosted top-up once',
     () async {

@@ -1,4 +1,5 @@
 import '../../domain/entities/public_delivery_tracking.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../core/presentation/providers/operations_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/domain/failures/app_failure.dart';
@@ -26,10 +27,21 @@ final activeOrderStreamProvider =
 final availableOrdersStreamProvider = StreamProvider<List<DeliveryOrder>>((
   ref,
 ) {
+  final driver = ref.watch(currentUserProfileProvider).value;
+  if (driver == null ||
+      !driver.role.isDriver ||
+      !driver.driverApproved ||
+      !driver.isAvailable ||
+      driver.vehicleType == null ||
+      driver.serviceAreaIds.isEmpty) {
+    return Stream.value(<DeliveryOrder>[]);
+  }
   final service = ref.watch(deliveryRemoteServiceProvider);
-  return service.watchAvailableOrders().map(
-    (result) => result.fold((failure) => throw failure, (value) => value),
-  );
+  return service
+      .watchAvailableOrders(driver.vehicleType!.name, driver.serviceAreaIds)
+      .map(
+        (result) => result.fold((failure) => throw failure, (value) => value),
+      );
 });
 
 /// Stream provider for customer orders

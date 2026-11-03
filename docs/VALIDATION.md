@@ -52,3 +52,16 @@ App builds use the validated local client env and generated platform configurati
 - Complete real Paystack test-mode acceptance, reconciliation/refunds/chargebacks, ingress rate limits, monitoring, retention and operating policies before live funding.
 - Verify customer/driver/staff flows on physical Android/iPhone devices, including permission denial, reconnection, authentication, deep links and app lifecycle behavior.
 - No line-coverage percentage, exhaustive historical code proof, absence of all vulnerabilities or production-readiness certification is claimed.
+
+## Driver access and API quota follow-up — 2026-11-02
+
+The original counts/build checks above describe the publication snapshot. Follow-up implementation is based on commit `09a0649663a2ab44e3ce57fa50c96442bad1d7a3`, with local source changes for administrator driver approval, operating-area permissions, coarse offer previews and durable authenticated-RPC quotas.
+
+- Flutter and backend analyzers pass with no issues.
+- **197 Flutter tests pass** in the final full run, including the two driver-subscription scenarios and 60 responsive cases across ten screens at 320/600/1280 px with 1×/2× text. The fleet roster includes pending and approved synthetic drivers. The local log is `.cache/validation/driver-access-flutter-tests.txt`.
+- **15 Firestore rules tests pass**, including protected approval metadata, denied self-approval/online bypass, vehicle/area filtering, list limits, revoked access and private quota/audit collections.
+- **45 emulator/backend/API tests pass**: 18 operations-policy scenarios, 19 payment scenarios, 5 actual HTTP tests and 3 durable-quota tests. Concurrent funding attempts share one allowance across Firestore transactions; separate limiter instances observe persisted state. The HTTP test seeds exhausted buckets to verify rejection before invalid-command/payment work; exact burst/refill tests inject a clock rather than assuming a fixed window.
+- The client subscription tests pass for pending/offline/unscoped drivers and cancellation of an approved driver's offers subscription after revocation. Retry tests also exercise `resource-exhausted` without losing the idempotency key.
+- The publishable-file guard reports **534 files checked, 0 findings**; `git diff --check` passes. The new Firestore index is valid JSON. Dependency advisories and Git history were not rescanned in this follow-up.
+
+The approval screen has also been added to responsive widget coverage. No application build, physical-device flow, live Firebase rule/index publication, production deletion or real Paystack acceptance was performed in this follow-up. The user plans to clear Firebase for a fresh-start rollout. See [DRIVER_ACCESS_AND_ABUSE_CONTROLS.md](DRIVER_ACCESS_AND_ABUSE_CONTROLS.md) for the workflow, exact quota values and deployment checklist.

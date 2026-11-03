@@ -12,6 +12,9 @@ class FleetDriverSummary extends Equatable {
   final String? vehiclePlateNumber;
   final String? vehicleModel;
   final bool isAvailable;
+  final bool driverApproved;
+  final List<String> serviceAreaIds;
+  final String? serviceAreaName;
   final double rating;
   final String? currentOrderId;
   final double? lastKnownLatitude;
@@ -27,6 +30,9 @@ class FleetDriverSummary extends Equatable {
     this.vehiclePlateNumber,
     this.vehicleModel,
     this.isAvailable = false,
+    this.driverApproved = false,
+    this.serviceAreaIds = const [],
+    this.serviceAreaName,
     this.rating = 5.0,
     this.currentOrderId,
     this.lastKnownLatitude,
@@ -45,6 +51,11 @@ class FleetDriverSummary extends Equatable {
       vehiclePlateNumber: map['vehiclePlateNumber'] as String?,
       vehicleModel: map['vehicleModel'] as String?,
       isAvailable: map['isAvailable'] as bool? ?? false,
+      driverApproved: map['driverApproved'] == true,
+      serviceAreaIds: List<String>.from(
+        map['serviceAreaIds'] as List? ?? const [],
+      ),
+      serviceAreaName: map['serviceAreaName'] as String?,
       rating: (map['rating'] as num?)?.toDouble() ?? 5.0,
       currentOrderId: map['currentOrderId'] as String?,
       lastKnownLatitude: (map['lastKnownLatitude'] as num?)?.toDouble(),
@@ -66,6 +77,9 @@ class FleetDriverSummary extends Equatable {
       'vehiclePlateNumber': vehiclePlateNumber,
       'vehicleModel': vehicleModel,
       'isAvailable': isAvailable,
+      'driverApproved': driverApproved,
+      'serviceAreaIds': serviceAreaIds,
+      'serviceAreaName': serviceAreaName,
       'rating': rating,
       'currentOrderId': currentOrderId,
       'lastKnownLatitude': lastKnownLatitude,
@@ -83,6 +97,9 @@ class FleetDriverSummary extends Equatable {
     String? vehiclePlateNumber,
     String? vehicleModel,
     bool? isAvailable,
+    bool? driverApproved,
+    List<String>? serviceAreaIds,
+    String? serviceAreaName,
     double? rating,
     String? currentOrderId,
     double? lastKnownLatitude,
@@ -98,6 +115,9 @@ class FleetDriverSummary extends Equatable {
       vehiclePlateNumber: vehiclePlateNumber ?? this.vehiclePlateNumber,
       vehicleModel: vehicleModel ?? this.vehicleModel,
       isAvailable: isAvailable ?? this.isAvailable,
+      driverApproved: driverApproved ?? this.driverApproved,
+      serviceAreaIds: serviceAreaIds ?? this.serviceAreaIds,
+      serviceAreaName: serviceAreaName ?? this.serviceAreaName,
       rating: rating ?? this.rating,
       currentOrderId: currentOrderId ?? this.currentOrderId,
       lastKnownLatitude: lastKnownLatitude ?? this.lastKnownLatitude,
@@ -116,6 +136,9 @@ class FleetDriverSummary extends Equatable {
     vehiclePlateNumber,
     vehicleModel,
     isAvailable,
+    driverApproved,
+    serviceAreaIds,
+    serviceAreaName,
     rating,
     currentOrderId,
     lastKnownLatitude,

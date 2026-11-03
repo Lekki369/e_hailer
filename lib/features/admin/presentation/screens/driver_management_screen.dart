@@ -3,6 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
+import '../../../../core/presentation/widgets/app_snackbar.dart';
+import '../../../delivery/domain/entities/location_point.dart';
+import '../../../map/presentation/widgets/location_picker.dart';
 import '../../domain/entities/fleet_driver_summary.dart';
 import '../providers/admin_providers.dart';
 
@@ -19,6 +22,7 @@ class DriverManagementScreen extends StatefulHookConsumerWidget {
 class _DriverManagementScreenState
     extends ConsumerState<DriverManagementScreen> {
   String _searchQuery = '';
+  final Set<String> _saving = {};
   bool? _onlineFilter; // null = all, true = online, false = offline
 
   @override
@@ -69,12 +73,12 @@ class _DriverManagementScreenState
                   ),
                 ),
                 SizedBox(height: 10.h),
-                Row(
+                Wrap(
+                  spacing: 8.w,
+                  runSpacing: 8.h,
                   children: [
                     _buildFilterChip('All Drivers', null),
-                    SizedBox(width: 8.w),
                     _buildFilterChip('Online (Available)', true),
-                    SizedBox(width: 8.w),
                     _buildFilterChip('Offline', false),
                   ],
                 ),
@@ -160,6 +164,67 @@ class _DriverManagementScreenState
     );
   }
 
+  Future<void> _changeApproval(FleetDriverSummary driver) async {
+    if (_saving.contains(driver.uid)) return;
+    LocationPoint? point;
+    if (!driver.driverApproved) {
+      point = await Navigator.of(context).push<LocationPoint>(
+        MaterialPageRoute(
+          builder: (_) =>
+              const LocationPicker(title: 'Choose driver operating area'),
+        ),
+      );
+      if (!mounted || point == null) return;
+    }
+    final approved = !driver.driverApproved;
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          approved ? 'Approve this driver?' : 'Revoke driver approval?',
+        ),
+        content: Text(
+          approved
+              ? 'Approve ${driver.fullName} with ${driver.vehicleModel ?? driver.vehicleType.label} (${driver.vehiclePlateNumber ?? 'plate missing'}) for ${driver.vehicleType.label} jobs around ${point!.address}? This covers the selected area and neighbouring zones, roughly 30 km across. Exact customer details appear only after assignment.'
+              : 'This driver will lose access to new jobs. Active deliveries must be finished or reassigned first.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(approved ? 'Approve driver' : 'Revoke approval'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    setState(() => _saving.add(driver.uid));
+    final result = await ref
+        .read(adminRemoteServiceProvider)
+        .setDriverApproval(
+          driverId: driver.uid,
+          approved: approved,
+          latitude: point?.latitude,
+          longitude: point?.longitude,
+          areaName: point?.address,
+        );
+    if (!mounted) return;
+    setState(() => _saving.remove(driver.uid));
+    result.fold(
+      (failure) => AppSnackBar.showError(context, failure.message),
+      (_) => AppSnackBar.showSuccess(
+        context,
+        approved
+            ? 'Driver approved. They can now go online.'
+            : 'Driver approval revoked.',
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String label, bool? filter) {
     final isSelected = _onlineFilter == filter;
     return ChoiceChip(
@@ -197,51 +262,46 @@ class _DriverManagementScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   CircleAvatar(
                     radius: 20.r,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     child: Text(
-                      driver.fullName.isNotEmpty
-                          ? driver.fullName[0].toUpperCase()
-                          : 'D',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      driver.fullName.isEmpty
+                          ? 'D'
+                          : driver.fullName[0].toUpperCase(),
                     ),
                   ),
                   SizedBox(width: 12.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        driver.fullName,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          driver.fullName,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        driver.phone.isNotEmpty
-                            ? driver.phone
-                            : 'No phone provided',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                        Text(
+                          driver.phone.isEmpty
+                              ? 'No phone provided'
+                              : driver.phone,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
+              SizedBox(height: 8.h),
               // Online / Offline Status Badge
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -283,15 +343,43 @@ class _DriverManagementScreenState
               ),
             ],
           ),
+          SizedBox(height: 12.h),
+          Text(
+            driver.driverApproved
+                ? 'Approved • ${driver.serviceAreaName ?? "Operating area assigned"}'
+                : 'Awaiting approval • No access to jobs',
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _saving.contains(driver.uid)
+                  ? null
+                  : () => _changeApproval(driver),
+              icon: Icon(
+                driver.driverApproved
+                    ? Icons.block
+                    : Icons.verified_user_outlined,
+              ),
+              label: Text(
+                _saving.contains(driver.uid)
+                    ? 'Saving…'
+                    : driver.driverApproved
+                    ? 'Revoke approval'
+                    : 'Review and approve',
+              ),
+            ),
+          ),
           SizedBox(height: 14.h),
           const Divider(height: 1),
           SizedBox(height: 10.h),
 
           // Vehicle & Performance Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
-              Row(
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Icon(Icons.two_wheeler, size: 16.w, color: AppColors.primary),
                   SizedBox(width: 6.w),
@@ -305,6 +393,7 @@ class _DriverManagementScreenState
                 ],
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.star, size: 16, color: Colors.amber),
                   SizedBox(width: 4.w),
@@ -322,9 +411,15 @@ class _DriverManagementScreenState
           ),
           SizedBox(height: 6.h),
 
+          Text(
+            driver.vehicleModel ?? 'Vehicle model not provided',
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+          ),
+          SizedBox(height: 6.h),
           // Assignment indicator & Last Seen
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Text(
                 driver.currentOrderId != null

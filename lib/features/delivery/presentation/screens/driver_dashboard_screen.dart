@@ -2,6 +2,8 @@ import '../../../../core/presentation/widgets/adaptive_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../map/presentation/widgets/osm_map_widget.dart';
 
 import '../../../../core/presentation/styles/app_colors.dart';
 import '../../../../core/presentation/widgets/app_snackbar.dart';
@@ -50,6 +52,18 @@ class DriverDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (driver != null && !driver.driverApproved)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Your driver account is awaiting administrator approval. You can go online after your vehicle and operating area are approved.',
+                  ),
+                ),
+              if (driver?.serviceAreaName != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text('Operating area: ${driver!.serviceAreaName}'),
+                ),
               // 1. Driver Profile & Availability Toggle Card
               Container(
                 padding: const EdgeInsets.all(20),
@@ -111,36 +125,38 @@ class DriverDashboardScreen extends ConsumerWidget {
                             Switch(
                               value: driver?.isAvailable ?? false,
                               activeThumbColor: AppColors.success,
-                              onChanged: (val) async {
-                                if (driver == null) return;
-                                final res = await ref
-                                    .read(authRemoteServiceProvider)
-                                    .setDriverAvailability(
-                                      uid: driver.uid,
-                                      isAvailable: val,
-                                    );
-                                res.fold(
-                                  (failure) {
-                                    AppSnackBar.showError(
-                                      context,
-                                      failure.message,
-                                    );
-                                  },
-                                  (_) {
-                                    if (val) {
-                                      AppSnackBar.showSuccess(
-                                        context,
-                                        'You are now ONLINE and broadcasting availability',
+                              onChanged: driver?.driverApproved != true
+                                  ? null
+                                  : (val) async {
+                                      if (driver == null) return;
+                                      final res = await ref
+                                          .read(authRemoteServiceProvider)
+                                          .setDriverAvailability(
+                                            uid: driver.uid,
+                                            isAvailable: val,
+                                          );
+                                      res.fold(
+                                        (failure) {
+                                          AppSnackBar.showError(
+                                            context,
+                                            failure.message,
+                                          );
+                                        },
+                                        (_) {
+                                          if (val) {
+                                            AppSnackBar.showSuccess(
+                                              context,
+                                              'You are now ONLINE and broadcasting availability',
+                                            );
+                                          } else {
+                                            AppSnackBar.showInfo(
+                                              context,
+                                              'You are now OFFLINE',
+                                            );
+                                          }
+                                        },
                                       );
-                                    } else {
-                                      AppSnackBar.showInfo(
-                                        context,
-                                        'You are now OFFLINE',
-                                      );
-                                    }
-                                  },
-                                );
-                              },
+                                    },
                             ),
                             Text(
                               (driver?.isAvailable ?? false)
@@ -320,7 +336,7 @@ class DriverDashboardScreen extends ConsumerWidget {
                     return Container(
                       padding: const EdgeInsets.all(40),
                       alignment: Alignment.center,
-                      child: const Column(
+                      child: Column(
                         children: [
                           Icon(
                             Icons.radar_rounded,
@@ -329,7 +345,11 @@ class DriverDashboardScreen extends ConsumerWidget {
                           ),
                           SizedBox(height: 12),
                           Text(
-                            'Scanning for nearby requests...',
+                            driver?.driverApproved != true
+                                ? 'Waiting for administrator approval.'
+                                : driver?.isAvailable != true
+                                ? 'Go online to receive jobs in your operating area.'
+                                : 'Waiting for jobs in your operating area…',
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                         ],
@@ -360,7 +380,7 @@ class DriverDashboardScreen extends ConsumerWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    order.trackingNumber,
+                                    '${order.distanceKm.toStringAsFixed(1)} km delivery',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -412,6 +432,51 @@ class DriverDashboardScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ],
+                              ),
+                              TextButton.icon(
+                                icon: const Icon(Icons.map_outlined),
+                                label: const Text('View approximate areas'),
+                                onPressed: () => showModalBottomSheet<void>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => SafeArea(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            'Approximate pickup and drop-off areas',
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            'Pins show broad areas. Exact addresses and contacts appear after assignment.',
+                                          ),
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            height:
+                                                MediaQuery.sizeOf(
+                                                  context,
+                                                ).height *
+                                                0.45,
+                                            child: OsmMapWidget(
+                                              initialZoom: 10,
+                                              showMyLocationButton: false,
+                                              pickupLocation: LatLng(
+                                                order.pickupLocation.latitude,
+                                                order.pickupLocation.longitude,
+                                              ),
+                                              dropoffLocation: LatLng(
+                                                order.dropoffLocation.latitude,
+                                                order.dropoffLocation.longitude,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(

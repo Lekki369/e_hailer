@@ -84,3 +84,6 @@ graphify-out/cache/
 
 # Local verification captures and temporary caches
 .cache/
+
+# Local Firebase CLI crash diagnostics
+firepit-log.txt

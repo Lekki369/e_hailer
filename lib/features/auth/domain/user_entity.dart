@@ -34,6 +34,9 @@ class UserEntity extends Equatable {
   final double walletBalance;
   final double rating;
   final bool isAvailable;
+  final bool driverApproved;
+  final List<String> serviceAreaIds;
+  final String? serviceAreaName;
   final VehicleType? vehicleType;
   final String? vehiclePlateNumber;
   final String? vehicleModel;
@@ -49,6 +52,9 @@ class UserEntity extends Equatable {
     this.walletBalance = 0.0,
     this.rating = 5.0,
     this.isAvailable = false,
+    this.driverApproved = false,
+    this.serviceAreaIds = const [],
+    this.serviceAreaName,
     this.vehicleType,
     this.vehiclePlateNumber,
     this.vehicleModel,
@@ -65,6 +71,9 @@ class UserEntity extends Equatable {
     double? walletBalance,
     double? rating,
     bool? isAvailable,
+    bool? driverApproved,
+    List<String>? serviceAreaIds,
+    String? serviceAreaName,
     VehicleType? vehicleType,
     String? vehiclePlateNumber,
     String? vehicleModel,
@@ -80,6 +89,9 @@ class UserEntity extends Equatable {
       walletBalance: walletBalance ?? this.walletBalance,
       rating: rating ?? this.rating,
       isAvailable: isAvailable ?? this.isAvailable,
+      driverApproved: driverApproved ?? this.driverApproved,
+      serviceAreaIds: serviceAreaIds ?? this.serviceAreaIds,
+      serviceAreaName: serviceAreaName ?? this.serviceAreaName,
       vehicleType: vehicleType ?? this.vehicleType,
       vehiclePlateNumber: vehiclePlateNumber ?? this.vehiclePlateNumber,
       vehicleModel: vehicleModel ?? this.vehicleModel,
@@ -98,6 +110,9 @@ class UserEntity extends Equatable {
       'walletBalance': walletBalance,
       'rating': rating,
       'isAvailable': isAvailable,
+      'driverApproved': driverApproved,
+      'serviceAreaIds': serviceAreaIds,
+      'serviceAreaName': serviceAreaName,
       'vehicleType': vehicleType?.name,
       'vehiclePlateNumber': vehiclePlateNumber,
       'vehicleModel': vehicleModel,
@@ -116,6 +131,11 @@ class UserEntity extends Equatable {
       walletBalance: (map['walletBalance'] as num?)?.toDouble() ?? 0.0,
       rating: (map['rating'] as num?)?.toDouble() ?? 5.0,
       isAvailable: map['isAvailable'] as bool? ?? false,
+      driverApproved: map['driverApproved'] == true,
+      serviceAreaIds: List<String>.from(
+        map['serviceAreaIds'] as List? ?? const [],
+      ),
+      serviceAreaName: map['serviceAreaName'] as String?,
       vehicleType: map['vehicleType'] != null
           ? VehicleType.values.firstWhere(
               (e) => e.name == map['vehicleType'],
@@ -141,6 +161,9 @@ class UserEntity extends Equatable {
     walletBalance,
     rating,
     isAvailable,
+    driverApproved,
+    serviceAreaIds,
+    serviceAreaName,
     vehicleType,
     vehiclePlateNumber,
     vehicleModel,

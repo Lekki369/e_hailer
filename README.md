@@ -160,6 +160,8 @@ The [documentation index](docs/README.md) is the main entry point. Start with th
 
 For changes, preserve the feature layers, manual domain models, functional error handling, and centralized routes/assets. Add regression coverage at the affected boundary, update API/schema docs when contracts change, and refresh Archify/Graphify when their source changes. Pull requests should explain the behavior change, validation performed and any migration or configuration impact. Keep generated files synchronized with the pinned Serverpod CLI.
 
+The [driver access and abuse-control guide](docs/DRIVER_ACCESS_AND_ABUSE_CONTROLS.md) explains administrator approval, operating areas, redacted offers and durable API quotas.
+
 The [security audit](docs/SECURITY_AUDIT.md) records fixes, scanned dependencies/history and remaining release risks. Enable the staged-file guard with `git config --local core.hooksPath .githooks`; CI also scans public files and Git history. Read [SECURITY.md](SECURITY.md) before sharing findings or handling credentials.
 
 ## License

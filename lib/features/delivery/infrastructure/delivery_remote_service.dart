@@ -72,12 +72,16 @@ class DeliveryRemoteService {
   Stream<Either<AppFailure, List<DeliveryOrder>>> watchCustomerOrders(
     String customerId,
   ) => _watchOrders(_orders.where('customerId', isEqualTo: customerId));
-  Stream<Either<AppFailure, List<DeliveryOrder>>> watchAvailableOrders() =>
-      _watchOrders(
-        _firestore
-            .collection('jobOffers')
-            .where('status', isEqualTo: DeliveryStatus.searchingDriver.name),
-      );
+  Stream<Either<AppFailure, List<DeliveryOrder>>> watchAvailableOrders(
+    String vehicleType,
+    List<String> serviceAreaIds,
+  ) => _watchOrders(
+    _firestore
+        .collection('jobOffers')
+        .where('vehicleType', isEqualTo: vehicleType)
+        .where('serviceAreaId', whereIn: serviceAreaIds)
+        .limit(30),
+  );
   Stream<Either<AppFailure, List<DeliveryOrder>>> watchDriverActiveOrders(
     String driverId,
   ) => _watchOrders(_orders.where('driverId', isEqualTo: driverId)).map(

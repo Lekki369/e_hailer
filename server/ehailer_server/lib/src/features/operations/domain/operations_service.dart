@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import '../../../core/domain/command_store.dart';
 import '../../../core/domain/operation_failure.dart';
 import '../../delivery/domain/delivery_policy.dart';
+import '../../delivery/domain/driver_access_policy.dart';
 import '../../map/domain/road_route.dart';
 
 part 'delivery_commands.dart';
@@ -149,6 +150,8 @@ class OperationsService {
         case 'updateDriverLocation':
         case 'rateDelivery':
           output = await _updateDelivery(context, command);
+        case 'setDriverApproval':
+          output = await _setDriverApproval(context);
         case 'assignOrders':
           output = await _assignOrders(context);
         case 'submitPayout':
@@ -287,30 +290,25 @@ class _CommandContext {
       tx.set('jobOffers/$id', {
         for (final key in [
           'id',
-          'trackingNumber',
           'type',
           'status',
           'vehicleType',
           'createdAt',
-          'parcel',
           'pricing',
           'distanceKm',
           'estimatedDurationMinutes',
         ])
           key: order[key],
-        'customerId': '',
-        'customerName': '',
-        'customerPhone': '',
-        'pickupLocation': {
-          ...order['pickupLocation'] as Map,
-          'contactName': '',
-          'contactPhone': '',
-        },
-        'dropoffLocation': {
-          ...order['dropoffLocation'] as Map,
-          'contactName': '',
-          'contactPhone': '',
-        },
+        'serviceAreaId': DriverAccessPolicy.area(
+          order['pickupLocation']['latitude'] as num,
+          order['pickupLocation']['longitude'] as num,
+        ),
+        'pickupLocation': DriverAccessPolicy.previewLocation(
+          order['pickupLocation'] as Map,
+        ),
+        'dropoffLocation': DriverAccessPolicy.previewLocation(
+          order['dropoffLocation'] as Map,
+        ),
       });
     } else {
       tx.delete('jobOffers/$id');

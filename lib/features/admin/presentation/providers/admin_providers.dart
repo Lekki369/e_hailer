@@ -34,7 +34,8 @@ final fleetDriversStreamProvider = StreamProvider<List<FleetDriverSummary>>((
 final onlineFleetDriversProvider = Provider<List<FleetDriverSummary>>((ref) {
   final driversAsync = ref.watch(fleetDriversStreamProvider);
   return driversAsync.maybeWhen(
-    data: (drivers) => drivers.where((d) => d.isAvailable).toList(),
+    data: (drivers) =>
+        drivers.where((d) => d.driverApproved && d.isAvailable).toList(),
     orElse: () => [],
   );
 });

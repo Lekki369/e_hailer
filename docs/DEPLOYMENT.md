@@ -50,3 +50,9 @@ Run under a supervised unprivileged account with restart policy and graceful ter
 5. Establish reconciliation, refunds/chargebacks, retention, monitoring and rollback responsibilities before switching to a separately configured live environment.
 
 Do not roll back to a client that writes wallet balances or public PINs. If payment processing must stop, remove/disable the provider configuration and show service-unavailable feedback while preserving intents and receipts for reconciliation. Payout transfers are still manually confirmed outside the app. See [VALIDATION.md](VALIDATION.md) for completed checks and their limits.
+
+## Driver access and API quotas
+
+Deploy `firestore.rules` and `firestore.indexes.json` alongside the backend/client changes. Wait for the job-offer composite index to become ready. New drivers stay offline and cannot access jobs until an administrator approves their vehicle and operating area in Fleet Drivers Roster. Approval and revocation are audited privately; active deliveries must finish or be reassigned before approval changes.
+
+The authenticated RPC now enforces durable per-account token buckets before operation work. This does not replace ingress limits, Firebase Authentication/SMS quotas, App Check, connection deadlines or monitoring. See [the workflow, quota values and deployment checks](DRIVER_ACCESS_AND_ABUSE_CONTROLS.md). The user intends to clear Firebase for this fresh-start rollout; no data was deleted by this change.

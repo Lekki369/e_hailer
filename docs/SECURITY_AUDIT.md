@@ -34,10 +34,24 @@ Manual review of the security-sensitive historical changes found full-record pub
 ## Remaining release risks
 
 1. Verify Firebase key API/application restrictions, Authentication settings, IAM, deployed rules and App Check in the actual project. They cannot be established from this checkout. Treat historical client identifiers as public; rotate/restrict them if required by your deployment policy. Any actual private credential found later needs immediate revocation, not merely a source edit.
-2. Deploy ingress rate limits, request deadlines, abuse controls and monitoring. The API verifies Firebase identity but does not currently require App Check or impose a durable per-account quota across every command. PIN attempt limits and payment initialization leases do not replace global resource controls.
+2. Deploy ingress rate limits, request deadlines, Firebase Authentication/SMS abuse controls and monitoring. The follow-up implementation now imposes durable per-account quotas across authenticated RPC commands; it does not require App Check or bound unauthenticated, direct-Firestore or multi-account traffic. See [driver access and abuse controls](DRIVER_ACCESS_AND_ABUSE_CONTROLS.md).
 3. Complete real Paystack test-mode acceptance, webhook delivery, reconciliation, refund/chargeback handling and merchant accounting. Current tests use local stubs. Credits cannot be treated as cash until a correctly isolated provider deployment is accepted.
 4. Migrate legacy public PIN/tracking fields and reconcile old wallet data before applying this model to existing users. Rules do not remove previously exposed document fields.
-5. Driver self-registration and broad driver job-offer reads need an operator-approved onboarding/service-area policy before real customer locations are exposed to a fleet. Public tracking remains redacted, but authorized operational reads still contain personal data.
+5. Driver registration now creates an unapproved, offline account. Administrator approval grants an operating area and locks the reviewed vehicle; Firestore offer reads and backend assignment enforce both. Offers reveal only coarse areas and omit contacts, exact addresses, parcel notes and tracking tokens. Operators must still verify drivers before approval and verify these controls after deployment. Authorized participant/staff reads still contain personal data.
 6. Finish production signing, private device acceptance, backup/retention policy and operational rollback. Local test/build success does not certify all devices, network failures or production permissions.
 
 See [SECURITY.md](../SECURITY.md), [ENVIRONMENT.md](ENVIRONMENT.md), [PAYMENTS.md](PAYMENTS.md) and [VALIDATION.md](VALIDATION.md). No claim of zero vulnerabilities or guaranteed secrecy is made.
+
+## Follow-up: driver access and API quotas — 2026-11-02
+
+The original evidence and history-scan counts above describe the initial audit. This follow-up was implemented against baseline `09a0649663a2ab44e3ce57fa50c96442bad1d7a3`; it does not imply a new historical scan or production deployment.
+
+| Finding | Severity / source status | Follow-up change |
+| --- | --- | --- |
+| Self-registration granted broad driver job visibility | High / addressed in source | Admin-only approval with private audit, immutable reviewed vehicle, map-selected operating zones, scoped/limited Firestore queries and matching transactional assignment checks. |
+| Offer documents exposed exact locations and a public tracking capability | High / addressed in source | Allowlisted previews use coarse cell centres and omit exact addresses, contacts, parcel data and tracking tokens. Exact details require assignment. |
+| Authenticated RPC had no durable per-account quota | High / addressed for RPC; ingress controls remain open | Transactional UID token buckets across server instances, stricter quote/funding/verification budgets, bounded request payloads and safe idempotency-key retention after rejection. |
+
+The user plans a fresh Firebase start and will remove any existing data. No production deletion, migration, rule publication, index deployment or Paystack acceptance was performed here. See [the workflow, policy details and deployment steps](DRIVER_ACCESS_AND_ABUSE_CONTROLS.md) and [validation results](VALIDATION.md).
+
+Follow-up verification: **197 Flutter tests, 45 emulator/backend/API tests and 15 Firestore rules tests pass**; Flutter/backend analyzers report no issues. The publishable-file guard reports 0 findings. These checks establish local regression evidence, not deployed acceptance.

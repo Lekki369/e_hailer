@@ -1,7 +1,7 @@
 import { after, before, beforeEach, test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, limit, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 
 let env;
 const projectId = 'demo-ehailer';
@@ -22,7 +22,10 @@ beforeEach(async () => {
     await setDoc(doc(store, 'deliveryPins/order'), {customerId:'customer', pin:'7429'});
     await setDoc(doc(store, 'publicTracking/random-token'), {status:'inTransit', expiresAtMillis: Date.now() + 60000});
     await setDoc(doc(store, 'publicTracking/expired-token'), {status:'delivered', expiresAtMillis: 1});
-    await setDoc(doc(store, 'jobOffers/order'), {status:'searchingDriver'});
+    await updateDoc(doc(store, 'users/driver'), {driverApproved:true, isAvailable:true, serviceAreaIds:['65:33']});
+    await setDoc(doc(store, 'jobOffers/order'), {status:'searchingDriver', vehicleType:'car', serviceAreaId:'65:33'});
+    await setDoc(doc(store, 'jobOffers/far'), {status:'searchingDriver', vehicleType:'car', serviceAreaId:'0:0'});
+    await setDoc(doc(store, 'jobOffers/truck'), {status:'searchingDriver', vehicleType:'truck', serviceAreaId:'65:33'});
     await setDoc(doc(store, 'payouts/payout'), {driverId:'driver', status:'pending'});
     await setDoc(doc(store, 'disputes/ticket'), {claimantId:'customer', targetDriverId:'driver', status:'open'});
   });
@@ -73,7 +76,8 @@ test('new profiles support customer and driver only with zero balance', async ()
   await assertFails(setDoc(doc(db('extra'), 'users/extra'), {...profile('extra'), totalTrips:999}));
 });
 test('driver vehicle names match Flutter and customer cannot become available', async () => {
-  await assertSucceeds(updateDoc(doc(db('driver'), 'users/driver'), {vehicleType:'car',isAvailable:true}));
+  await assertSucceeds(updateDoc(doc(db('driver'), 'users/driver'), {isAvailable:true}));
+  await assertFails(updateDoc(doc(db('driver'), 'users/driver'), {vehicleType:'truck'}));
   await assertFails(updateDoc(doc(db('driver'), 'users/driver'), {vehicleType:'sedan'}));
   await assertFails(updateDoc(doc(db('customer'), 'users/customer'), {isAvailable:true}));
 });
@@ -83,8 +87,13 @@ test('forged batch cannot debit a user and create a delivery', async () => {
   batch.set(doc(store, 'deliveries/fake'), {customerId:'customer',status:'delivered'});
   await assertFails(batch.commit());
 });
-test('only drivers read job offers and only staff enumerate users', async () => {
-  await assertSucceeds(getDocs(collection(db('driver'), 'jobOffers')));
+test('only approved drivers read scoped offers and only staff enumerate users', async () => {
+  await assertFails(getDocs(collection(db('driver'), 'jobOffers')));
+  await assertSucceeds(getDocs(query(collection(db('driver'), 'jobOffers'), where('vehicleType','==','car'), where('serviceAreaId','in',['65:33']), limit(30))));
+  await assertSucceeds(getDoc(doc(db('driver'), 'jobOffers/order')));
+  await assertFails(getDoc(doc(db('driver'), 'jobOffers/far')));
+  await assertFails(getDoc(doc(db('driver'), 'jobOffers/truck')));
+  await assertFails(getDocs(query(collection(db('driver'), 'jobOffers'), where('vehicleType','==','car'), where('serviceAreaId','==','65:33'), limit(31))));
   for (const uid of [undefined,'customer']) await assertFails(getDocs(collection(db(uid), 'jobOffers')));
   await assertFails(getDocs(collection(db('customer'), 'users')));
   await assertSucceeds(getDocs(collection(db('admin'), 'users')));
@@ -112,4 +121,32 @@ test('payment intents, settlements and pending-wallet pointers are server-owned'
     }
   }
   await assertFails(updateDoc(doc(db('customer'),'users/customer'),{pendingTopUpReference:'forged'}));
+});
+
+test('drivers cannot self-approve, change their operating area or bypass revocation', async () => {
+  const driver = doc(db('driver'), 'users/driver');
+  for (const data of [{driverApproved:true}, {serviceAreaIds:['0:0']}, {serviceAreaName:'Elsewhere'}, {approvalUpdatedBy:'driver'}]) {
+    // Updating an existing true value is not a change; use false to prove protection too.
+    if (data.driverApproved === true) data.driverApproved = false;
+    await assertFails(updateDoc(driver,data));
+  }
+  await assertFails(setDoc(doc(db('new-driver'), 'users/new-driver'), {...profile('new-driver','driver'), driverApproved:true, serviceAreaIds:['65:33']}));
+  await assertSucceeds(setDoc(doc(db('pending'), 'users/pending'), profile('pending','driver')));
+  await assertFails(updateDoc(doc(db('pending'), 'users/pending'),{isAvailable:true}));
+  await assertFails(updateDoc(doc(db('pending'), 'users/pending'),{driverApproved:true}));
+  await assertFails(getDoc(doc(db('pending'), 'jobOffers/order')));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await updateDoc(doc(context.firestore(),'users/driver'),{driverApproved:false, isAvailable:false, serviceAreaIds:[]});
+  });
+  await assertFails(getDoc(doc(db('driver'), 'jobOffers/order')));
+  await assertFails(updateDoc(driver,{isAvailable:true}));
+});
+
+test('API quota and approval audit documents are private and server-owned', async () => {
+  for (const uid of [undefined,'customer','driver','admin','support']) {
+    for (const path of ['apiQuotas/account','driverApprovalAudit/event']) {
+      await assertFails(getDoc(doc(db(uid), path)));
+      await assertFails(setDoc(doc(db(uid),path), {tokens:999}));
+    }
+  }
 });
